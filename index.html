@@ -42,7 +42,7 @@
 <div class="config-section">
   <div class="config-section-title" data-en="Colors" data-es="Colores">Colors</div>
   <div class="color-top-grid">
-    <label><span id=tMode></span><br><select id=mode><option value=balanced>Equilibrado automático</option><option value=manual>Distribución manual</option></select></label>
+    <label><span id=tMode></span><br><select id=mode><option value=balanced>Equilibrado automático</option><option value=free>Colores libres</option><option value=manual>Distribución manual</option></select></label>
     <label><span id=tPreset></span><br><select id=preset onchange="applyPreset(this.value)">
       <option value="">—</option><option value=standard></option><option value=priority></option><option value=twoColor></option><option value=threeColor></option><option value=manual></option>
     </select></label>
@@ -57,7 +57,7 @@
 <div class="config-section seed-section">
   <div class="config-section-title" data-en="Seed" data-es="Seed">Seed</div>
   <div class="config-generate-actions">
-    <div class="seed-row"><input id="seedInput" type="text" maxlength="64" placeholder="MSW-A7K42" autocomplete="off" spellcheck="false"><button type="button" onclick="copySeed()" id="copySeedBtn">⧉ Copy</button><button type="button" onclick="pasteSeed()" id="pasteSeedBtn">▣ Paste</button><button type="button" onclick="newSeed()" id="newSeedBtn">↻ New seed</button><button type="button" class="secondary" onclick="generateWithSeed()" id="generateSeedBtn">Generate with seed</button><span id="seedStatus" class="small"></span></div>
+    <div class="seed-row"><input id="seedInput" type="text" maxlength="64" placeholder="MSW-A7K42" autocomplete="off" spellcheck="false"><button type="button" onclick="copySeed()" id="copySeedBtn">⧉ Copiar</button><button type="button" onclick="pasteSeed()" id="pasteSeedBtn">▣ Pegar</button><button type="button" onclick="newSeed()" id="newSeedBtn">↻ Nueva seed</button><button type="button" class="secondary" onclick="generateWithSeed()" id="generateSeedBtn">Generar con seed</button><span id="seedStatus" class="small"></span></div>
   </div>
 </div>
 
@@ -82,17 +82,17 @@
     <input id="collectionSearch" type="search" oninput="renderCollection()" placeholder="">
     <div class="collection-filters">
       <select id="collectionOwnershipFilter" onchange="renderCollection()">
-        <option value="all">All</option><option value="owned">Owned</option><option value="missing">Missing</option>
+        <option value="all">Todas</option><option value="owned">Tengo</option><option value="missing">Faltantes</option>
       </select>
       <select id="collectionColorFilter" onchange="renderCollection()">
-        <option value="all">All colors</option>
-        <option value="White">White</option><option value="Blue">Blue</option><option value="Black">Black</option><option value="Red">Red</option><option value="Green">Green</option>
+        <option value="all">Todos los colores</option>
+        <option value="White">Blanco</option><option value="Blue">Azul</option><option value="Black">Negro</option><option value="Red">Rojo</option><option value="Green">Verde</option>
       </select>
       <select id="collectionRarityFilter" onchange="renderCollection()">
-        <option value="all">All rarities</option><option value="C">Common</option><option value="U">Uncommon</option><option value="R">Rare</option><option value="M">Mythic</option>
+        <option value="all">Todas las rarezas</option><option value="C">Común</option><option value="U">Infrecuente</option><option value="R">Rara</option><option value="M">Mítica</option>
       </select>
-      <button type="button" class="secondary collection-missing-filter" id="collectionMissingBtn" onclick="showMissingCollection()">Missing</button>
-      <button type="button" class="secondary collection-clear-filter" id="collectionClearFilters" onclick="clearCollectionFilters()">Clear</button>
+      <button type="button" class="secondary collection-missing-filter" id="collectionMissingBtn" onclick="showMissingCollection()">Faltantes</button>
+      <button type="button" class="secondary collection-clear-filter" id="collectionClearFilters" onclick="clearCollectionFilters()">Limpiar</button>
     </div>
   </div>
   <div id="collectionStats" class="collection-stats-panel"></div>
@@ -101,19 +101,30 @@
 </div><aside id="historyDrawer" class="collection-drawer">
   <div class="drawer-head"><h2 id="historyDrawerTitle"></h2><button class="drawer-close" onclick="closeHistory()">×</button></div>
   <div class="history-toolbar">
-    <input id="historySearch" type="search" oninput="renderHistoryList()" placeholder="Search decks">
+    <input id="historySearch" type="search" oninput="renderHistoryList()" placeholder="Buscar mazos">
     <select id="historySort" onchange="renderHistoryList()">
-      <option value="newest">Newest first</option>
-      <option value="oldest">Oldest first</option>
-      <option value="name">Name A–Z</option>
+      <option value="newest">Más recientes</option>
+      <option value="oldest">Más antiguos</option>
+      <option value="name">Nombre A–Z</option>
     </select>
   </div>
   <div id="historyList" class="drawer-body"></div>
-</aside><div id="swapOverlay" class="swap-overlay" onclick="if(event.target===this)closeSwapModal()"><div class="swap-modal"><div class=row style="justify-content:space-between"><h2 id="swapTitle"></h2><button class="drawer-close" onclick="closeSwapModal()">×</button></div><div id="swapBody"></div></div></div><div id="noteOverlay" class="swap-overlay" onclick="if(event.target===this)closeNoteModal()"><div class="note-modal"><div class="row" style="justify-content:space-between"><h2 id="noteTitle"></h2><button class="drawer-close" onclick="closeNoteModal()">×</button></div><div class="note-nav-row"><button type="button" id="noteBackBtn" class="note-back-btn" onclick="noteNavigateBack()">← Back</button><span class="note-ref-hint" id="noteRefHint"></span></div><div id="noteBody"></div></div></div><div id="refCardPreview" aria-hidden="true"><img id="refCardPreviewImg" alt=""><div id="refCardPreviewCaption" class="ref-caption"></div></div><div id="cardPreview" class="card-preview" aria-hidden="true">
+</aside><div id="swapOverlay" class="swap-overlay" onclick="if(event.target===this)closeSwapModal()"><div class="swap-modal"><div class=row style="justify-content:space-between"><h2 id="swapTitle"></h2><button class="drawer-close" onclick="closeSwapModal()">×</button></div><div id="swapBody"></div></div></div><div id="noteOverlay" class="swap-overlay" onclick="if(event.target===this)closeNoteModal()"><div class="note-modal"><div class="row" style="justify-content:space-between"><h2 id="noteTitle"></h2><button class="drawer-close" onclick="closeNoteModal()">×</button></div><div class="note-nav-row"><button type="button" id="noteBackBtn" class="note-back-btn" onclick="noteNavigateBack()">← Volver</button><span class="note-ref-hint" id="noteRefHint"></span></div><div id="noteBody"></div></div></div><div id="refCardPreview" aria-hidden="true"><img id="refCardPreviewImg" alt=""><div id="refCardPreviewCaption" class="ref-caption"></div></div><div id="cardPreview" class="card-preview" aria-hidden="true">
   <div class="preview-scroll">
     <img id="cardPreviewImg" alt="">
     <div id="cardPreviewCaption" class="card-preview-caption"></div>
     <div id="cardPreviewMeta" class="card-preview-meta"></div>
   </div>
-</div><script src="js/app.js"></script>
+</div><script src="data/cards.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/state.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/generator.js"></script>
+<script src="js/collection.js"></script>
+<script src="js/history.js"></script>
+<script src="js/json.js"></script>
+<script src="js/cardPreview.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/app.js"></script>
 </body></html>

@@ -97,10 +97,39 @@ function updateStickyBar(){
   const sc=document.getElementById("stickyCount");
   if(sg)sg.textContent=T("generate");
   if(sr)sr.textContent=T("reroll");
-  if(ss)ss.textContent=seed||"—";
-  if(sc)sc.textContent=count>1?`× ${count}`:"";
-  sc.style.display=count>1?"":"none";
+  if(ss){ss.textContent=seed||"—";ss.title=es?"Mantén presionado para copiar la seed":"Hold to copy seed";}
+  if(sc){sc.textContent=count>1?`× ${count}`:"";sc.style.display=count>1?"":"none";}
 }
+(function initStickySeedCopy(){
+  let pressTimer=null;
+  async function copySeedValue(){
+    const seed=document.getElementById("seedInput")?.value||"";
+    if(!seed||seed==="—")return;
+    try{await navigator.clipboard.writeText(seed);}
+    catch(e){
+      const ta=document.createElement("textarea");ta.value=seed;
+      document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();
+    }
+    showToast(language==="es"?"Seed copiada ✓":"Seed copied ✓");
+  }
+  document.addEventListener("mousedown",e=>{
+    if(!e.target.closest("#stickySeed"))return;
+    pressTimer=setTimeout(copySeedValue,500);
+  });
+  document.addEventListener("mouseup",e=>{
+    if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+  });
+  document.addEventListener("touchstart",e=>{
+    if(!e.target.closest("#stickySeed"))return;
+    pressTimer=setTimeout(copySeedValue,500);
+  },{passive:true});
+  document.addEventListener("touchend",e=>{
+    if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+  });
+  document.addEventListener("touchcancel",()=>{
+    if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+  });
+})();
 (function initStickyBar(){
   const primaryActions=document.querySelector(".config-primary-actions");
   const bar=document.getElementById("stickyActions");
@@ -423,6 +452,7 @@ function deckSummaryHtml(d){
  <ul class="deck-summary-errors">${errors.map(e=>`<li>${e}</li>`).join("")}</ul></div>`;
 }
 function deckCollectionStatusHtml(deck){
+  if(!respectInv.checked)return "";
   const required={};
   deck.forEach(x=>required[x.n]=(required[x.n]||0)+1);
   const missing=[];

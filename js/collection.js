@@ -48,7 +48,6 @@ function openCollection(){
   renderCollectionStats();
   renderCollection();
   setStructuralActive("collection");
-  setTimeout(()=>collectionSearch.focus(),100);
 }
 function closeCollection(){
   document.getElementById("collectionDrawer").classList.remove("open");

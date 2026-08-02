@@ -38,6 +38,12 @@ function openCollection(){
   document.body.classList.add("drawer-open");
   drawerTitle.textContent=T("collectionTitle");
   collectionSearch.placeholder=T("search");
+  const expBtn=document.getElementById("collectionExportBtn");
+  const impBtn=document.getElementById("collectionImportBtn");
+  const rstBtn=document.getElementById("collectionResetBtn");
+  if(expBtn)expBtn.textContent=T("collectionExport");
+  if(impBtn)impBtn.textContent=T("collectionImport");
+  if(rstBtn)rstBtn.textContent=T("collectionReset");
   updateCollectionFilterLanguage();
   renderCollectionStats();
   renderCollection();
@@ -132,4 +138,70 @@ function openCollectionAtCard(cardNumber){
     });
     if(row)row.scrollIntoView({block:"center",behavior:"smooth"});
   },120);
+}
+
+function resetCollection(){
+  if(!confirm(T("collectionResetConfirm")))return;
+  cards.forEach(x=>x.qty=0);
+  Storage.saveCollection(cards);
+  renderCollectionStats();
+  renderCollection();
+  markDeckCollectionStatusDirty();
+  showToast(language==="es"?"Colección reseteada ✓":"Collection reset ✓");
+}
+function exportCollection(){
+  const payload={
+    format:"MoodSwingsCollection",
+    version:1,
+    exportedAt:new Date().toISOString(),
+    cards:cards.map(x=>({n:x.n,qty:+x.qty||0}))
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="MoodSwings_Collection.json";
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},0);
+}
+
+function importCollection(file){
+  if(!file)return;
+  const es=language==="es";
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(String(reader.result||""));
+      if(!data||data.format!=="MoodSwingsCollection")
+        throw new Error(es?"Formato no reconocido.":"Unrecognized format.");
+      if(!Array.isArray(data.cards))
+        throw new Error(es?"El archivo no contiene cartas.":"File contains no cards.");
+
+      // Ask replace or merge
+      const isMerge=confirm(
+        es
+          ?"¿Combinar con tu colección actual?\n\n[Aceptar] Combinar — mantiene el mayor valor entre ambas.\n[Cancelar] Reemplazar — sobreescribe todo."
+          :"Merge with your current collection?\n\n[OK] Merge — keeps the higher quantity of each card.\n[Cancel] Replace — overwrites everything."
+      );
+
+      const incoming=Object.fromEntries(data.cards.map(x=>[+x.n,Math.max(0,+x.qty||0)]));
+      let changed=0;
+      cards.forEach(x=>{
+        const inQty=incoming[x.n]??0;
+        const newQty=isMerge?Math.max(+x.qty||0,inQty):inQty;
+        if(newQty!==(+x.qty||0)){x.qty=newQty;changed++;}
+      });
+
+      Storage.saveCollection(cards);
+      renderCollectionStats();
+      renderCollection();
+      markDeckCollectionStatusDirty();
+      showToast(es
+        ?`Colección ${isMerge?"combinada":"reemplazada"} ✓ (${changed} carta${changed===1?"":"s"} actualizada${changed===1?"":"s"})`
+        :`Collection ${isMerge?"merged":"replaced"} ✓ (${changed} card${changed===1?"":"s"} updated)`
+      );
+    }catch(e){
+      alert((es?"No se pudo importar la colección: ":"Could not import collection: ")+e.message);
+    }
+  };
+  reader.readAsText(file,"UTF-8");
 }

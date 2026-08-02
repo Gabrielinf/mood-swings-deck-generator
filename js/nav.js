@@ -17,13 +17,16 @@ document.addEventListener("click",e=>{
  const b=e.target.closest(".section-nav-btn"); if(!b)return;
  const target=b.dataset.sectionTarget;
  if(target==="collection"){
-   openCollection();return;
+   closeSwapModal();closeNoteModal();openCollection();return;
  }
  if(target==="history"){
-   openHistory();return;
+   closeSwapModal();closeNoteModal();openHistory();return;
  }
  // Generator and Decks are page sections: close any open drawer before navigating.
  if(target==="generator"||target==="decks"){
+   closeSwapModal();closeNoteModal();
+   // Force immediate visual hide in case browser defers the reflow
+   const so=document.getElementById("swapOverlay");if(so)so.style.display="none";
    const collection=document.getElementById("collectionDrawer");
    const history=document.getElementById("historyDrawer");
    const overlay=document.getElementById("drawerOverlay");

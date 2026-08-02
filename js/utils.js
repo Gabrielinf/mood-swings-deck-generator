@@ -1,7 +1,7 @@
 function shuffle(a, rng=Math.random) {
-  a=[...a];
-  for(let i=a.length-1;i;i--){let j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
-  return a;
+  const r=Array.from(a);
+  for(let i=r.length-1;i;i--){let j=Math.floor(rng()*(i+1));let t=r[i];r[i]=r[j];r[j]=t;}
+  return r;
 }
 
 function seedHash(str) {

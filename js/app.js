@@ -6,11 +6,11 @@ document.addEventListener("click",e=>{let p=document.querySelector(".lang-picker
 
 
 function setup(){
-["nC","nU","nR","nM"].forEach(id=>document.getElementById(id).addEventListener("change",()=>{syncDeckSizeFromRarities()}));["prio1","prio2","prio3","prio4","prio5"].forEach((id,i)=>{let e=document.getElementById(id);e.onchange=()=>enforceUniquePriority(e);e.innerHTML=colors.map(c=>`<option value="${c}">${colorOptionText(c)}</option>`).join("");e.value=colors[i]});rarities.forEach(r=>{document.getElementById("manualBody").innerHTML+=`<tr><th>${r}</th>${colors.map(c=>`<td><input id="q${r}${c}" type=number min=0 value=0></td>`).join("")}</tr>`});document.getElementById("mode").onchange=()=>{const v=document.getElementById("mode").value;document.getElementById("manual").style.display=v==="manual"?"block":"none";document.getElementById("priorityControls").style.display=(v==="balanced"&&document.getElementById("priorityMode").value==="fixed")?"flex":"none";};loadConfig();setLang(language)}
+["nC","nU","nR","nM"].forEach(id=>document.getElementById(id).addEventListener("change",()=>{syncDeckSizeFromRarities()}));["prio1","prio2","prio3","prio4","prio5"].forEach((id,i)=>{let e=document.getElementById(id);e.onchange=()=>enforceUniquePriority(e);e.innerHTML=colors.map(c=>`<option value="${c}">${colorOptionText(c)}</option>`).join("");e.value=colors[i]});rarities.forEach(r=>{document.getElementById("manualBody").innerHTML+=`<tr><th>${r}</th>${colors.map(c=>`<td><input id="q${r}${c}" type=number min=0 value=0></td>`).join("")}</tr>`});document.getElementById("mode").onchange=()=>{const v=document.getElementById("mode").value;document.getElementById("manual").style.display=v==="manual"?"block":"none";document.getElementById("priorityControls").style.display=(v==="balanced"&&document.getElementById("priorityMode").value==="fixed")?"flex":"none";updateDeckCountHelp();};loadConfig();setLang(language)}
 function setLang(v){language=v;document.documentElement.lang=v;Storage.saveLanguage(v);
 let lb=document.getElementById("langButton");if(lb)lb.innerHTML=v==="es"?'<span class="flag-svg flag-es"></span><span>Español</span>':'<span class="flag-svg flag-gb"></span><span>English</span>';document.documentElement.lang=v;for(const [id,k] of [["tTitle","title"],["tSub","sub"],["tConfig","config"],["tDeckSize","deckSize"],["tRatioPreset","ratioPreset"],["tC","C"],["tU","U"],["tR","R"],["tM","M"],["tCopies","copies"],["tDecks","decks"],["tMode","mode"],["tPreset","preset"],["tInventory","inventory"],["tInventoryHelp","inventoryHelp"],["tPriorityMode","priorityMode"],["tManual","manual"],["tGenerate","generate"],["tReroll","reroll"],["generateHelp","generateHelp"]])document.getElementById(id).textContent=T(k);mode.options[0].text=T("balancedAuto");mode.options[1].text=T("freeColor");mode.options[2].text=T("manualDistribution");priorityMode.options[0].text=T("randomPriority");priorityMode.options[1].text=T("fixedPriority");
 ratioPreset.options[0].text=T("ratioBase");ratioPreset.options[1].text=T("ratioCommon");ratioPreset.options[2].text=T("ratioBalanced");ratioPreset.options[3].text=T("ratioRare");ratioPreset.options[4].text=T("ratioCustom");
-preset.options[1].text=T("presetStandard");preset.options[2].text=T("presetPriority");preset.options[3].text=T("presetTwo");preset.options[4].text=T("presetThree");preset.options[5].text=T("presetManual");["prio1","prio2","prio3","prio4","prio5"].forEach(id=>{let e=document.getElementById(id);[...e.options].forEach(o=>o.text=colorOptionText(o.value))});if(collectionDrawer&&document.getElementById("collectionDrawer").classList.contains("open")){drawerTitle.textContent=T("collectionTitle");collectionSearch.placeholder=T("search");renderCollection();}if(historyDrawer&&document.getElementById("historyDrawer").classList.contains("open")){document.getElementById("historyDrawerTitle").textContent=T("history");renderHistoryList();}if(typeof decks!=="undefined"&&decks.length)render();let cd=document.getElementById("collectionDrawer");if(cd&&cd.classList.contains("open"))renderCollection();let hd=document.getElementById("historyDrawer");if(hd&&hd.classList.contains("open")){if(typeof activeHistoryIndex!=="undefined"&&activeHistoryIndex!==null)showHistoryEntry(activeHistoryIndex);else renderHistoryList();}}
+preset.options[1].text=T("presetStandard");preset.options[2].text=T("presetPriority");preset.options[3].text=T("presetTwo");preset.options[4].text=T("presetThree");preset.options[5].text=T("presetManual");["prio1","prio2","prio3","prio4","prio5"].forEach(id=>{let e=document.getElementById(id);[...e.options].forEach(o=>o.text=colorOptionText(o.value))});if(collectionDrawer&&document.getElementById("collectionDrawer").classList.contains("open")){drawerTitle.textContent=T("collectionTitle");collectionSearch.placeholder=T("search");renderCollection();}if(historyDrawer&&document.getElementById("historyDrawer").classList.contains("open")){document.getElementById("historyDrawerTitle").textContent=T("history");renderHistoryList();}updateStickyBar();if(typeof decks!=="undefined"&&decks.length)render();let cd=document.getElementById("collectionDrawer");if(cd&&cd.classList.contains("open"))renderCollection();let hd=document.getElementById("historyDrawer");if(hd&&hd.classList.contains("open")){if(typeof activeHistoryIndex!=="undefined"&&activeHistoryIndex!==null)showHistoryEntry(activeHistoryIndex);else renderHistoryList();}}
 function needs(){return {C:+nC.value,U:+nU.value,R:+nR.value,M:+nM.value}}
 function rarityTotal(){let n=needs();return n.C+n.U+n.R+n.M}
 function activeRatio(){
@@ -84,7 +84,37 @@ function newSeed(){
   let el=document.getElementById("seedInput");
   if(el)el.value=createSeed();
   setSeedStatus("");
+  updateStickyBar();
 }
+function updateStickyBar(){
+  const bar=document.getElementById("stickyActions");if(!bar)return;
+  const seed=document.getElementById("seedInput")?.value||"";
+  const count=+deckCount.value||1;
+  const es=language==="es";
+  const sg=document.getElementById("stickyGenerate");
+  const sr=document.getElementById("stickyReroll");
+  const ss=document.getElementById("stickySeed");
+  const sc=document.getElementById("stickyCount");
+  if(sg)sg.textContent=T("generate");
+  if(sr)sr.textContent=T("reroll");
+  if(ss)ss.textContent=seed||"—";
+  if(sc)sc.textContent=count>1?`× ${count}`:"";
+  sc.style.display=count>1?"":"none";
+}
+(function initStickyBar(){
+  const primaryActions=document.querySelector(".config-primary-actions");
+  const bar=document.getElementById("stickyActions");
+  if(!bar||!primaryActions)return;
+  function onScroll(){
+    const rect=primaryActions.getBoundingClientRect();
+    const visible=rect.bottom<0;
+    bar.style.display=visible?"flex":"none";
+    document.body.classList.toggle("has-sticky-bar",visible);
+  }
+  window.addEventListener("scroll",onScroll,{passive:true});
+  window.addEventListener("resize",onScroll,{passive:true});
+  onScroll();
+})();
 function showToast(message,type="ok"){
  const el=document.getElementById("appToast");if(!el)return;
  el.textContent=message;el.className=`app-toast show ${type}`;
@@ -143,11 +173,103 @@ function reroll(){
   return generate();
 }
 
+function maxDecksFromCollection(){
+  const ns=needs();
+  const colorMode=document.getElementById("mode")?.value||"balanced";
+  let min=Infinity;
+
+  for(const r of rarities){
+    const needed=ns[r];
+    if(!needed)continue;
+
+    if(colorMode==="free"){
+      // No color restriction: total copies per rarity / needed per deck.
+      // Apply a 10% safety margin because the random generator needs slack
+      // to distribute cards without running out near the theoretical limit.
+      const total=cards
+        .filter(x=>!excluded.has(x.n)&&x.rarity===r&&(+x.qty||0)>0)
+        .reduce((sum,x)=>sum+(+x.qty||0),0);
+      if(!total){min=0;break;}
+      const possible=Math.floor(total*0.9/needed);
+      if(possible<min)min=possible;
+
+    } else if(colorMode==="manual"){
+      // Use the exact per-color quotas from the manual distribution UI.
+      for(const c of colors){
+        const neededColor=Math.max(0,Math.floor(+(document.getElementById(`q${r}${c}`)?.value)||0));
+        if(!neededColor)continue;
+        const available=cards
+          .filter(x=>!excluded.has(x.n)&&x.rarity===r&&x.color===c&&(+x.qty||0)>0)
+          .reduce((sum,x)=>sum+(+x.qty||0),0);
+        const possible=Math.floor(available/neededColor);
+        if(possible<min)min=possible;
+      }
+
+    } else {
+      // Balanced mode: floor(needed/5) per color, with (needed%5) colors getting +1.
+      // Assign the +1 extras to the colors with most copies (best-case estimate).
+      const base=Math.floor(needed/5);
+      const extra=needed%5;
+      const colorAvail=colors.map(c=>({
+        c,
+        qty:cards
+          .filter(x=>!excluded.has(x.n)&&x.rarity===r&&x.color===c&&(+x.qty||0)>0)
+          .reduce((sum,x)=>sum+(+x.qty||0),0)
+      })).sort((a,b)=>b.qty-a.qty);
+      colorAvail.forEach(({qty},i)=>{
+        const neededColor=base+(i<extra?1:0);
+        if(!neededColor)return;
+        const possible=Math.floor(qty/neededColor);
+        if(possible<min)min=possible;
+      });
+    }
+  }
+  return Math.max(1,min===Infinity?1:min);
+}
+function updateDeckCountHelp(){
+  const e=document.getElementById("deckCountHelp");if(!e)return;
+  if(respectInv.checked){
+    const maxDecks=maxDecksFromCollection();
+    const inp=document.getElementById("deckCount");
+    if(inp)inp.max=maxDecks;
+    const es=language==="es";
+    if(maxDecks<1){
+      e.textContent=es
+        ?"⚠ Tu colección no tiene suficientes cartas para construir un mazo. Agrega cartas en Colección."
+        :"⚠ Your collection doesn't have enough cards to build a deck. Add cards in Collection.";
+      e.style.color="#b42318";
+    }else{
+      e.textContent=es
+        ?`Las copias de tu colección se reparten entre los mazos. Máximo posible: ${maxDecks}.`
+        :`Your collection copies are shared across decks. Maximum possible: ${maxDecks}.`;
+      e.style.color="";
+    }
+  }else{
+    const inp=document.getElementById("deckCount");
+    if(inp)inp.max=20;
+    e.textContent="";
+    e.style.color="";
+  }
+  document.querySelectorAll(".config-section-title").forEach(x=>x.textContent=language==="es"?x.dataset.es:x.dataset.en);
+}
 function readGeneratorConfig(){
   const es=language==="es";
   const count=Math.max(1,+deckCount.value||1);
   const mc=+maxCopies.value;
   if(!Number.isInteger(mc)||mc<1)throw generationError(es?"Máx. copias por carta debe ser un entero de al menos 1.":"Max copies per card must be an integer of at least 1.");
+  if(respectInv.checked){
+    const totalOwned=cards.filter(x=>!excluded.has(x.n)&&(+x.qty||0)>0).length;
+    if(totalOwned===0)throw generationError(es
+      ?"Tu colección está vacía. Agrega cartas en Colección o desactiva \"Usar solo cartas de mi colección\"."
+      :"Your collection is empty. Add cards in Collection or uncheck \"Use only cards from my collection\".");
+    const maxD=maxDecksFromCollection();
+    if(maxD<1)throw generationError(es
+      ?"Tu colección no tiene suficientes cartas para construir un mazo con la configuración actual. Revisa las cantidades en Colección."
+      :"Your collection doesn't have enough cards to build a deck with the current settings. Check quantities in Collection.");
+    if(count>maxD)throw generationError(es
+      ?`Tu colección permite un máximo de ${maxD} mazo${maxD===1?"":"s"} simultáneo${maxD===1?"":"s"} con la configuración actual.`
+      :`Your collection supports a maximum of ${maxD} simultaneous deck${maxD===1?"":"s"} with the current settings.`);
+  }
   const ns=needs();
   const target=Math.max(1,+deckSize.value||1);
   for(const r of rarities){
@@ -169,18 +291,22 @@ function readGeneratorConfig(){
   return {count,maxCopies:mc,respectInventory:respectInv.checked,seed:getGenerationSeed(),
     rarityCounts:ns,colorMode,priorityMode:pMode,priority,manualDistribution,lang:language};
 }
-function generate(){try{
-  const config=readGeneratorConfig();
-  activeGenerationSeed=config.seed;
-  activeGenerationRng=makeSeededRng(config.seed);
-  while(deckNames.length<config.count)deckNames.push("");
-  deckNames=deckNames.slice(0,config.count);
-  decks=Generator.generate(config,cards,excluded,locks);
-  let statusEl=document.getElementById("status");if(statusEl){statusEl.style.display="none";statusEl.innerHTML=""}
+function generate(){
+  const statusEl=document.getElementById("status");
+  try{
+    const config=readGeneratorConfig();
+    activeGenerationSeed=config.seed;
+    activeGenerationRng=makeSeededRng(config.seed);
+    while(deckNames.length<config.count)deckNames.push("");
+    deckNames=deckNames.slice(0,config.count);
+    decks=Generator.generate(config,cards,excluded,locks);
+    if(statusEl){statusEl.style.display="none";statusEl.innerHTML=""}
+  }catch(e){
+    if(statusEl){statusEl.className="card generation-error";statusEl.style.display="block";statusEl.innerHTML=`<strong>${language==="es"?"No se pudo generar el mazo":"Deck generation failed"}</strong><br><span class=bad>${e.message}</span>`;}
+    return;
+  }
   render();
-}catch(e){
-  let statusEl=document.getElementById("status");statusEl.className="card generation-error";statusEl.style.display="block";statusEl.innerHTML=`<strong>${language==="es"?"No se pudo generar el mazo":"Deck generation failed"}</strong><br><span class=bad>${e.message}</span>`;
-}}
+}
 
 function sortIndicator(tableId,col){
   let st=sortState[tableId];
@@ -262,7 +388,7 @@ function openSwapModal(deckIndex,cardNumber){
   document.getElementById("swapBody").innerHTML=
     `<p class="small">${colorIcon(current.color)} ${label(current.color)} · ${current.rarity} — ${T("availableReplacements")}: ${validCount}</p>`+
     sameHtml+otherHtml;
-  document.getElementById("swapOverlay").classList.add("open");
+  const so=document.getElementById("swapOverlay");so.style.display="";so.classList.add("open");
 }
 function closeSwapModal(){document.getElementById("swapOverlay").classList.remove("open");swapContext=null}
 function replaceDeckCard(newNumber){
@@ -312,8 +438,70 @@ function deckCollectionStatusHtml(deck){
     <ul class="deck-missing-list">${missing.map(x=>`<li>${x.card?`<button type="button" class="missing-card-link" onclick="openCollectionAtCard(${x.card.n})">${cardNameHtml(x.card)}</button>`:"#"+x.card?.n}: ${es?"necesitas":"need"} ${x.need}, ${es?"tienes":"have"} ${x.have} → <b>${es?"faltan":"missing"} ${x.missing}</b></li>`).join("")}</ul>
   </details>`;
 }
-function updateDeckCountHelp(){let e=document.getElementById("deckCountHelp");if(!e)return;e.textContent=respectInv.checked?(language==="es"?"Las copias disponibles de tu colección se reparten entre todos los mazos para que puedan usarse simultáneamente.":"Available copies in your collection are shared across all decks so they can be used simultaneously."):"";document.querySelectorAll(".config-section-title").forEach(x=>x.textContent=language==="es"?x.dataset.es:x.dataset.en);}
-function render(){updateDeckCountHelp();updateGenerationActionHints();updateStructuralNavigationLanguage();let ns=document.getElementById("newSeedBtn"),cs=document.getElementById("copySeedBtn"),ps=document.getElementById("pasteSeedBtn");if(ns)ns.textContent=language==="es"?"↻ Nueva seed":"↻ New seed";if(cs)cs.textContent=language==="es"?"⧉ Copiar":"⧉ Copy";if(ps)ps.textContent=language==="es"?"▣ Pegar":"▣ Paste";let gs=document.getElementById("generateSeedBtn");if(gs)gs.textContent=language==="es"?"Generar con seed":"Generate with seed";let statusEl=document.getElementById("status");statusEl.style.display="none";statusEl.innerHTML="";decksDiv=document.getElementById("decks");decksDiv.innerHTML=decks.map((d,i)=>`<div class=card><div class="deck-header-row"><h2><input class="deck-title-input" value="${(deckNames[i]||`${T("deck")} ${i+1}`).replace(/"/g,"&quot;")}" onchange="deckNames[${i}]=this.value.trim()||('${T("deck")} '+(${i}+1));render()"> <span class="small">— ${d.length} / ${deckSize.value} ${T("cardsWord")}</span></h2><div class="deck-header-actions"><button class="save-deck-btn" onclick="saveDeck(${i})">💾 ${T("saveDeck")}</button><button class="secondary deck-json-btn" onclick="exportDeckJSON(${i})">${language==="es"?"Exportar JSON":"Export JSON"}</button><button class="secondary deck-json-btn" onclick="prepareDeckJSONImport(${i})">${language==="es"?"Importar JSON":"Import JSON"}</button></div></div><div class=grid>${colors.map(c=>`<div class="stat ${c}">${label(c)}<br><b>${d.filter(x=>x.color===c).length}</b></div>`).join("")}</div>${deckSummaryHtml(d)}${deckCollectionStatusHtml(d)}<div class="table-scroll"><table><tr><th>🔒</th>${sortableHeader("deck"+i,"n","#")}${sortableHeader("deck"+i,"name",T("card"))}${sortableHeader("deck"+i,"color",T("color"))}${sortableHeader("deck"+i,"rarity",T("rarity"))}<th>${T("changeCard")}</th></tr>${sortedRows(d,"deck"+i).map(x=>`<tr class=${x.color}><td><input type=checkbox ${locks[i+"-"+x.n]?"checked":""} onchange="locks['${i+"-"+x.n}']=this.checked"></td><td>${x.n}</td><td>${cardNameHtml(x)}</td><td>${colorIcon(x.color)} ${label(x.color)}</td><td>${x.rarity}</td><td><button class="change-btn" onclick="openSwapModal(${i},${x.n})">↔ ${T("changeCard")}</button></td></tr>`).join("")}</table></div>`).join("")}
+function render(){
+  updateDeckCountHelp();updateGenerationActionHints();updateStructuralNavigationLanguage();updateStickyBar();
+  let ns=document.getElementById("newSeedBtn"),cs=document.getElementById("copySeedBtn"),ps=document.getElementById("pasteSeedBtn");
+  if(ns)ns.textContent=language==="es"?"↻ Nueva seed":"↻ New seed";
+  if(cs)cs.textContent=language==="es"?"⧉ Copiar":"⧉ Copy";
+  if(ps)ps.textContent=language==="es"?"▣ Pegar":"▣ Paste";
+  let gs=document.getElementById("generateSeedBtn");
+  if(gs)gs.textContent=language==="es"?"Generar con seed":"Generate with seed";
+  let statusEl=document.getElementById("status");
+  statusEl.style.display="none";statusEl.innerHTML="";
+  const decksDiv=document.getElementById("decks");
+  decksDiv.innerHTML=decks.map((d,i)=>{
+    const name=(deckNames[i]||`${T("deck")} ${i+1}`).replace(/"/g,"&quot;");
+    const rows=sortedRows(d,"deck"+i).map(x=>{
+      const lockKey=`${i}-${x.n}`;
+      const checked=locks[lockKey]?"checked":"";
+      return `<tr class=${x.color}>`+
+        `<td><input type=checkbox class="deck-lock-cb" data-deck="${i}" data-card="${x.n}" ${checked}></td>`+
+        `<td>${x.n}</td><td>${cardNameHtml(x)}</td>`+
+        `<td>${colorIcon(x.color)} ${label(x.color)}</td><td>${x.rarity}</td>`+
+        `<td><button class="change-btn deck-swap-btn" data-deck="${i}" data-card="${x.n}">↔ ${T("changeCard")}</button></td>`+
+        `</tr>`;
+    }).join("");
+    return `<div class=card>`+
+      `<div class="deck-header-row">`+
+        `<h2><input class="deck-title-input deck-name-input" data-deck="${i}" value="${name}"> `+
+        `<span class="small">— ${d.length} / ${deckSize.value} ${T("cardsWord")}</span></h2>`+
+        `<div class="deck-header-actions">`+
+          `<button class="save-deck-btn deck-save-btn" data-deck="${i}">💾 ${T("saveDeck")}</button>`+
+          `<button class="secondary deck-json-btn deck-export-btn" data-deck="${i}">${language==="es"?"Exportar JSON":"Export JSON"}</button>`+
+          `<button class="secondary deck-json-btn deck-import-btn" data-deck="${i}">${language==="es"?"Importar JSON":"Import JSON"}</button>`+
+        `</div>`+
+      `</div>`+
+      `<div class=grid>${colors.map(c=>`<div class="stat ${c}">${label(c)}<br><b>${d.filter(x=>x.color===c).length}</b></div>`).join("")}</div>`+
+      deckSummaryHtml(d)+deckCollectionStatusHtml(d)+
+      `<div class="table-scroll"><table>`+
+        `<tr><th>🔒</th>${sortableHeader("deck"+i,"n","#")}${sortableHeader("deck"+i,"name",T("card"))}${sortableHeader("deck"+i,"color",T("color"))}${sortableHeader("deck"+i,"rarity",T("rarity"))}<th>${T("changeCard")}</th></tr>`+
+        rows+
+      `</table></div></div>`;
+  }).join("");
+}
+// Event delegation for deck table interactions
+document.addEventListener("change",e=>{
+  const cb=e.target.closest(".deck-lock-cb");
+  if(cb){locks[`${cb.dataset.deck}-${cb.dataset.card}`]=cb.checked;}
+});
+document.addEventListener("click",e=>{
+  const swap=e.target.closest(".deck-swap-btn");
+  if(swap){openSwapModal(+swap.dataset.deck,+swap.dataset.card);return;}
+  const save=e.target.closest(".deck-save-btn");
+  if(save){saveDeck(+save.dataset.deck);return;}
+  const exp=e.target.closest(".deck-export-btn");
+  if(exp){exportDeckJSON(+exp.dataset.deck);return;}
+  const imp=e.target.closest(".deck-import-btn");
+  if(imp){prepareDeckJSONImport(+imp.dataset.deck);return;}
+});
+document.addEventListener("change",e=>{
+  const inp=e.target.closest(".deck-name-input");
+  if(inp){
+    const i=+inp.dataset.deck;
+    deckNames[i]=inp.value.trim()||`${T("deck")} ${i+1}`;
+    render();
+  }
+});
 function applyConfigToUI(c, opts){
   opts=opts||{};
   if(c.deckSize!=null)deckSize.value=c.deckSize;
@@ -383,7 +571,20 @@ function initConfigAutosave(){
  const ids=["deckSize","ratioPreset","nC","nU","nR","nM","maxCopies","deckCount","mode","preset","respectInv","priorityMode","prio1","prio2","prio3","prio4","prio5",...rarities.flatMap(r=>colors.map(c=>"q"+r+c))];
  ids.forEach(id=>{const e=document.getElementById(id);if(!e)return;e.addEventListener("change",scheduleConfigAutosave);e.addEventListener("input",scheduleConfigAutosave)});
 }
-function loadConfig(){let o=Storage.loadConfig();for(const k in o){let e=document.getElementById(k);if(e)e.type==="checkbox"?e.checked=o[k]:e.value=o[k]}if(!o.deckSize)deckSize.value=rarityTotal();if(!o.ratioPreset)ratioPreset.value="base";if(ratioPreset.value==="custom")customRatio=normalizeRatio(needs());mode.onchange();updatePriorityUI()}
+function loadConfig(){
+  let o=Storage.loadConfig();
+  for(const k in o){let e=document.getElementById(k);if(e)e.type==="checkbox"?e.checked=o[k]:e.value=o[k]}
+  if(!o.deckSize)deckSize.value=rarityTotal();
+  if(!o.ratioPreset)ratioPreset.value="base";
+  if(ratioPreset.value==="custom")customRatio=normalizeRatio(needs());
+  mode.onchange();updatePriorityUI();
+  // Clamp deckCount to what the collection actually supports on load.
+  if(respectInv.checked){
+    const maxD=maxDecksFromCollection();
+    const inp=document.getElementById("deckCount");
+    if(inp&&+inp.value>maxD)inp.value=1;
+  }
+}
 setup();initPriorityPrevious();updatePriorityUI();initConfigAutosave();generate();
 
 setTimeout(()=>{let e=document.getElementById("seedInput");if(e&&!e.value)newSeed()},0);

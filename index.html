@@ -19,9 +19,9 @@
   <div class="config-general-grid">
     <label class="general-inline-field"><span id=tDeckSize></span><input id=deckSize type=number min=1 value=45 onchange="syncRaritiesToDeckSize()"></label>
     <label class="general-inline-field"><span id=tCopies></span><input id=maxCopies type=number min=1 value=1></label>
-    <label class="general-inline-field"><span id=tDecks></span><input id=deckCount type=number min=1 max=8 value=1></label>
+    <label class="general-inline-field"><span id=tDecks></span><input id=deckCount type=number min=1 max=20 value=1></label>
   </div>
-  <div class="config-inventory-row"><div class="inventory-inline-wrap"><label class="inventory-inline"><input id=respectInv type=checkbox checked onchange="updateDeckCountHelp()"> <span id=tInventory></span></label><span id=tInventoryHelp class="small inventory-inline-help"></span><span id="deckCountHelp" class="field-help deck-count-help"></span></div></div>
+  <div class="config-inventory-row"><div class="inventory-inline-wrap"><label class="inventory-inline"><input id=respectInv type=checkbox onchange="updateDeckCountHelp()"> <span id=tInventory></span></label><span id=tInventoryHelp class="small inventory-inline-help"></span><span id="deckCountHelp" class="field-help deck-count-help"></span></div></div>
 </div>
 
 <div class="config-section">
@@ -77,7 +77,7 @@
 <div id=status style="display:none"></div><div id=decks></div>
 <div id="drawerOverlay" class="drawer-overlay" onclick="closeAllDrawers()"></div>
 <aside id="collectionDrawer" class="collection-drawer">
-  <div class="drawer-head"><h2 id="drawerTitle"></h2><button class="drawer-close" onclick="closeCollection()">×</button></div>
+  <div class="drawer-head"><h2 id="drawerTitle"></h2><div class="drawer-head-actions"><button type="button" class="secondary collection-io-btn" id="collectionExportBtn" onclick="exportCollection()">Export JSON</button><button type="button" class="secondary collection-io-btn" id="collectionImportBtn" onclick="document.getElementById('collectionImportInput').click()">Import JSON</button><button type="button" class="collection-io-btn collection-reset-btn" id="collectionResetBtn" onclick="resetCollection()">Reset</button><input id="collectionImportInput" type="file" accept=".json,application/json" style="display:none" onchange="importCollection(this.files[0]);this.value=''"></div><button class="drawer-close" onclick="closeCollection()">×</button></div>
   <div class="drawer-tools">
     <input id="collectionSearch" type="search" oninput="renderCollection()" placeholder="">
     <div class="collection-filters">
@@ -115,7 +115,13 @@
     <div id="cardPreviewCaption" class="card-preview-caption"></div>
     <div id="cardPreviewMeta" class="card-preview-meta"></div>
   </div>
-</div><script src="data/cards.js"></script>
+</div><div id="stickyActions" class="sticky-actions" style="display:none">
+  <span id="stickySeed" class="sticky-seed"></span>
+  <span id="stickyCount" class="sticky-count"></span>
+  <button onclick="generateNew()" id="stickyGenerate" class="sticky-generate"></button>
+  <button onclick="reroll()" id="stickyReroll" class="secondary sticky-reroll"></button>
+</div>
+<script src="data/cards.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/state.js"></script>

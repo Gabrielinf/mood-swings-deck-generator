@@ -12,5 +12,12 @@ const Storage = {
   saveConfig(o)        { localStorage.setItem("msConfigV3", JSON.stringify(o)); },
 
   loadHistory()        { const r=localStorage.getItem("msHistoryV4"); return r?JSON.parse(r):[]; },
-  saveHistory(h)       { localStorage.setItem("msHistoryV4", JSON.stringify(h)); }
+  saveHistory(h)       { localStorage.setItem("msHistoryV4", JSON.stringify(h)); },
+
+  loadSection()        { return localStorage.getItem("msSection")||"generator"; },
+  saveSection(s)       { localStorage.setItem("msSection", s); },
+
+  loadCustomDeck()     { const r=localStorage.getItem("msCustomDeckV1"); return r?JSON.parse(r):null; },
+  saveCustomDeck(d,n)  { localStorage.setItem("msCustomDeckV1", JSON.stringify({name:n||"",cards:(d||[]).map(x=>x.n)})); },
+  clearCustomDeck()    { localStorage.removeItem("msCustomDeckV1"); }
 };

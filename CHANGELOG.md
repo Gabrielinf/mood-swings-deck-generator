@@ -1,5 +1,73 @@
 # Changelog
 
+## 2.1.0 — Custom Deck Editor, MSC Codes, UX Polish
+
+### New features
+
+**Fase 7 — Custom Deck Editor (`js/customDeck.js`)**
+- New "Custom" section in the nav — inline page section, not a drawer
+- Table with pre-filled slots based on generator rarity config (C/U/R/M); empty slots show rarity name + count and a `+ Add` button
+- Filled card rows show name, color, rarity, and a `[−][n][+]` qty stepper; typing `0` removes the card
+- `⚡ Use generator` — runs `Generator.generate()` and loads the result as an editable starting point (confirms before replacing existing cards)
+- `💾 Save deck` — saves to history with `type:"custom"`
+- `Export JSON` / `Import JSON` — same `MoodSwingsDeckGenerator v2` format with `schema:"custom-deck"` and an `msc` field
+- Add-card drawer — opens on `+ Add`, pre-filtered by rarity, closes after a card is added
+- Hint below header explains that empty slots reflect the generator's C/U/R/M config
+- Sort by #, name, color, rarity — sort state persisted across refreshes
+- Custom deck persisted to `localStorage` (`msCustomDeckV1`) — survives page refresh
+- Custom mode hides seed section, Generate/Reroll buttons, toolbar actions, and sticky bar so the UI is focused
+- Badge on the "Custom" nav button shows card count when deck is non-empty
+- Sticky bar at the bottom when scrolled past the header: card count, `💾 Save`, `MSC` copy button
+
+**Fase 8 — MSC Codes (`js/msc.js`)**
+- `MSC.encode(deck)` → compact portable string `MSC2-XXXX-XXXX-…`
+- `MSC.decode(code)` → `[{n, copies}]`; v1 codes decoded for backwards compatibility
+- Bitmap encoding: 1 bit per card (133 cards) + optional 4-bit copy counts → ~27 base32 chars for single-copy decks, regardless of card count
+- MSC bar in the custom deck card: shows live code, `Copy code` button, `Import code` toggle
+- Import panel expands inline — validates on input, enables Load button only when code is valid, warns if composition doesn't match current rarity config
+- MSC code shown in history detail for `type:"custom"` entries
+
+**Fase 9 — History for custom decks**
+- `✦ Load into Custom` button in history detail for `type:"custom"` entries
+- Loads cards, sets name, navigates to Custom section, and persists
+
+**Fase 10 — JSON for custom decks**
+- `exportCustomDeckJSON()` — exports with `schema:"custom-deck"` and embedded `msc` field
+- `importCustomDeckJSON(file)` — validates card numbers, loads into editor
+
+**Navigation & persistence**
+- Active section saved to `localStorage` (`msSection`) on every nav change — restored on page refresh without animation
+- Custom deck sort state saved inside `msConfigV3` under `customDeckSort`
+
+**Errata fix (`js/cardPreview.js`)**
+- `errata` field from the remote JSON can be an object `{fields, note}` or a string; both are now handled — previously rendered as `[object Object]` for Creativity (#32)
+
+### Improvements
+
+- `js/nav.js` — floating nav shows only icons (no labels) to prevent truncation with 5 buttons; scroll detection respects `custom-mode` body class so Custom stays highlighted when scrolling
+- `js/history.js` — `deleteHistoryDeckFromList` and `deleteHistoryDeck` unified into `_deleteHistoryDeckShared`; both now reset `activeHistoryIndex`, fixing a stale index bug when deleting from the list view
+- `js/history.js` — card lookup in `showHistoryEntry` now casts with `+n` to handle string IDs from old history data
+- `js/storage.js` — added `loadSection`/`saveSection`, `loadCustomDeck`/`saveCustomDeck`/`clearCustomDeck`
+- `js/state.js` — `customDeck` and `customDeckName` hydrated from `localStorage` at startup using `cards` (collection state, with correct `qty` values)
+- `js/app.js` — `cycleSort` routes `"customdeck"` to `renderCustomDeck()`; `loadConfig` restores custom deck sort state
+
+### Bug fixes
+
+- Custom deck qty stepper input had `min="1"` but `customDeckSetCopies` accepted `0` — changed to `min="0"` for consistency
+- MSC copy toast fired unconditionally even if the clipboard API failed — now only fires on success; shows error toast on failure
+- MSC import row state (open + typed value) was lost on every `renderCustomDeck()` call — preserved across re-renders
+- Removed dead function `customDeckRemoveCopy` (never called; UI used `customDeckSetCopies` exclusively)
+- Removed dead wrapper `customDeckFocusSearch` — inlined `openAddCardDrawer` call at the callsite
+
+### Compatibility
+- New `localStorage` keys: `msCustomDeckV1`, `msSection`
+- `msConfigV3` gains `customDeckSort` field (ignored by older versions)
+- All existing keys unchanged (`msLang`, `msCardsV3`, `msExcludedV3`, `msConfigV3`, `msHistoryV4`)
+- History entries gain optional `type:"custom"` and `msc` fields (ignored by older versions)
+- JSON export gains optional `schema` and `msc` fields (v2 format, backwards compatible)
+- Seed algorithm unchanged
+- No new dependencies, no build step
+
 ## 2.0.0-dev — Modularization
 
 ### Bug fixes

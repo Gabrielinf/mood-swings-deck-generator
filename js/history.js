@@ -1,3 +1,11 @@
+function _historyMscCode(deck){
+  if(!deck||!Array.isArray(deck.cards)||!deck.cards.length)return "";
+  try{
+    const cardObjs=deck.cards.map(n=>cards.find(x=>x.n===+n)).filter(Boolean);
+    return MSC.encode(cardObjs);
+  }catch(e){return "";}
+}
+
 function openHistory(){
   const collection=document.getElementById("collectionDrawer");
   if(collection)collection.classList.remove("open");
@@ -127,18 +135,7 @@ function renderHistoryList(){
     sortEl.options[2].text=language==="es"?"Nombre A–Z":"Name A–Z";
   }
 }
-function deleteHistoryDeckFromList(event,entryIndex,deckIndex){
-  event.stopPropagation();
-  if(!confirm(T("deleteDeckConfirm")))return;
-  let h=getHistory();
-  if(!h[entryIndex]||!h[entryIndex].decks[deckIndex])return;
-  h[entryIndex].decks.splice(deckIndex,1);
-  if(h[entryIndex].decks.length===0)h.splice(entryIndex,1);
-  setHistory(h);
-  renderHistoryList();
-}
-function deleteHistoryDeck(entryIndex,deckIndex){
-  if(!confirm(T("deleteDeckConfirm")))return;
+function _deleteHistoryDeckShared(entryIndex,deckIndex){
   let h=getHistory();
   if(!h[entryIndex]||!h[entryIndex].decks[deckIndex])return;
   h[entryIndex].decks.splice(deckIndex,1);
@@ -146,6 +143,15 @@ function deleteHistoryDeck(entryIndex,deckIndex){
   setHistory(h);
   activeHistoryIndex=null;
   renderHistoryList();
+}
+function deleteHistoryDeckFromList(event,entryIndex,deckIndex){
+  event.stopPropagation();
+  if(!confirm(T("deleteDeckConfirm")))return;
+  _deleteHistoryDeckShared(entryIndex,deckIndex);
+}
+function deleteHistoryDeck(entryIndex,deckIndex){
+  if(!confirm(T("deleteDeckConfirm")))return;
+  _deleteHistoryDeckShared(entryIndex,deckIndex);
 }
 function historyTypeBadge(z){
   const es=language==="es";
@@ -159,18 +165,20 @@ function showHistoryEntry(index){
   const z=getHistory()[index],el=document.getElementById("historyList");if(!z)return;
   const es=language==="es";
   const isGenerated=z.type!=="custom";
-  const metaHtml=(z.seed||z.configuration)?`<div class="history-generation-meta">${z.seed?`<span class="history-seed">Seed: ${z.seed}</span>`:""}${z.configuration?`<span>${es?"Tamaño":"Size"}: ${z.configuration.deckSize||"—"}</span><span>${es?"Modo":"Mode"}: ${z.configuration.mode||"—"}</span>`:""}</div>
+  const mscCode=!isGenerated&&z.decks[0]?_historyMscCode(z.decks[0]):"";
+  const metaHtml=(z.seed||z.configuration||!isGenerated)?`<div class="history-generation-meta">${z.seed?`<span class="history-seed">Seed: ${z.seed}</span>`:""}${z.configuration?`<span>${es?"Tamaño":"Size"}: ${z.configuration.deckSize||"—"}</span><span>${es?"Modo":"Mode"}: ${z.configuration.mode||"—"}</span>`:""}${mscCode?`<span class="history-seed">${mscCode}</span>`:""}</div>
   <div class="history-config-actions">
     ${isGenerated&&z.seed?`<button type="button" class="secondary history-restore-btn" onclick="copyHistorySeed(${index})">${es?"Copiar seed":"Copy seed"}</button>`:""}
     ${isGenerated?`<button type="button" class="secondary history-restore-btn" onclick="restoreHistoryConfiguration(${index})">↩ ${es?"Restaurar configuración":"Restore configuration"}</button>`:""}
     ${isGenerated&&z.seed?`<button type="button" class="history-generate-btn" onclick="generateFromHistory(${index})">▶ ${es?"Generar con esta seed":"Generate with this seed"}</button>`:""}
+    ${!isGenerated?`<button type="button" class="history-generate-btn" onclick="loadHistoryEntryToCustomDeck(${index})">✦ ${es?"Cargar en Custom":"Load into Custom"}</button>`:""}
   </div>`:"";
   el.innerHTML=`<button class="secondary history-back" onclick="activeHistoryIndex=null;renderHistoryList()">← ${es?"Volver al historial":"Back to history"}</button>
   <p class="small"><b>${z.date}</b> ${historyTypeBadge(z)}</p>
   <div class="history-generation-summary">${historyGenerationInventoryBadge(z)}${historyGenerationIssues(z)}</div>
   ${metaHtml}`+
   z.decks.map((deck,i)=>{
-    const d=deck.cards.map(n=>cards.find(x=>x.n===n)).filter(Boolean);
+    const d=deck.cards.map(n=>cards.find(x=>x.n===+n)).filter(Boolean);
     const cc=Object.fromEntries(colors.map(c=>[c,d.filter(x=>x.color===c).length]));
     const tableId="history-"+index+"-"+i;
     return `<div class="history-detail">

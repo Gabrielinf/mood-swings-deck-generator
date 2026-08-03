@@ -10,7 +10,7 @@ function setup(){
 function setLang(v){language=v;document.documentElement.lang=v;Storage.saveLanguage(v);
 let lb=document.getElementById("langButton");if(lb)lb.innerHTML=v==="es"?'<span class="flag-svg flag-es"></span><span>Español</span>':'<span class="flag-svg flag-gb"></span><span>English</span>';document.documentElement.lang=v;for(const [id,k] of [["tTitle","title"],["tSub","sub"],["tConfig","config"],["tDeckSize","deckSize"],["tRatioPreset","ratioPreset"],["tC","C"],["tU","U"],["tR","R"],["tM","M"],["tCopies","copies"],["tDecks","decks"],["tMode","mode"],["tPreset","preset"],["tInventory","inventory"],["tInventoryHelp","inventoryHelp"],["tPriorityMode","priorityMode"],["tManual","manual"],["tGenerate","generate"],["tReroll","reroll"],["generateHelp","generateHelp"]])document.getElementById(id).textContent=T(k);mode.options[0].text=T("balancedAuto");mode.options[1].text=T("freeColor");mode.options[2].text=T("manualDistribution");priorityMode.options[0].text=T("randomPriority");priorityMode.options[1].text=T("fixedPriority");
 ratioPreset.options[0].text=T("ratioBase");ratioPreset.options[1].text=T("ratioCommon");ratioPreset.options[2].text=T("ratioBalanced");ratioPreset.options[3].text=T("ratioRare");ratioPreset.options[4].text=T("ratioCustom");
-preset.options[1].text=T("presetStandard");preset.options[2].text=T("presetPriority");preset.options[3].text=T("presetTwo");preset.options[4].text=T("presetThree");preset.options[5].text=T("presetManual");["prio1","prio2","prio3","prio4","prio5"].forEach(id=>{let e=document.getElementById(id);[...e.options].forEach(o=>o.text=colorOptionText(o.value))});if(collectionDrawer&&document.getElementById("collectionDrawer").classList.contains("open")){drawerTitle.textContent=T("collectionTitle");collectionSearch.placeholder=T("search");renderCollection();}if(historyDrawer&&document.getElementById("historyDrawer").classList.contains("open")){document.getElementById("historyDrawerTitle").textContent=T("history");renderHistoryList();}updateStickyBar();if(typeof decks!=="undefined"&&decks.length)render();let cd=document.getElementById("collectionDrawer");if(cd&&cd.classList.contains("open"))renderCollection();let hd=document.getElementById("historyDrawer");if(hd&&hd.classList.contains("open")){if(typeof activeHistoryIndex!=="undefined"&&activeHistoryIndex!==null)showHistoryEntry(activeHistoryIndex);else renderHistoryList();}}
+preset.options[1].text=T("presetStandard");preset.options[2].text=T("presetPriority");preset.options[3].text=T("presetTwo");preset.options[4].text=T("presetThree");preset.options[5].text=T("presetManual");["prio1","prio2","prio3","prio4","prio5"].forEach(id=>{let e=document.getElementById(id);[...e.options].forEach(o=>o.text=colorOptionText(o.value))});if(collectionDrawer&&document.getElementById("collectionDrawer").classList.contains("open")){drawerTitle.textContent=T("collectionTitle");collectionSearch.placeholder=T("search");renderCollection();}if(historyDrawer&&document.getElementById("historyDrawer").classList.contains("open")){document.getElementById("historyDrawerTitle").textContent=T("history");renderHistoryList();}updateStickyBar();if(typeof decks!=="undefined"&&decks.length)render();let cd=document.getElementById("collectionDrawer");if(cd&&cd.classList.contains("open"))renderCollection();let hd=document.getElementById("historyDrawer");if(hd&&hd.classList.contains("open")){if(typeof activeHistoryIndex!=="undefined"&&activeHistoryIndex!==null)showHistoryEntry(activeHistoryIndex);else renderHistoryList();}updateCustomDeckUI();}
 function needs(){return {C:+nC.value,U:+nU.value,R:+nR.value,M:+nM.value}}
 function rarityTotal(){let n=needs();return n.C+n.U+n.R+n.M}
 function activeRatio(){
@@ -29,12 +29,14 @@ function syncDeckSizeFromRarities(){
   ratioPreset.value="custom";
   customRatio=normalizeRatio(needs());
   if(mode.value==="manual"&&preset.value)syncManualToRarityCounts();
+  renderCustomDeck();
 }
 function syncRaritiesToDeckSize(){
   let total=Math.max(1,+deckSize.value||45);
   let vals=allocateByRatio(total,activeRatio());
   nC.value=vals.C;nU.value=vals.U;nR.value=vals.R;nM.value=vals.M;
   if(mode.value==="manual"&&preset.value)syncManualToRarityCounts();
+  renderCustomDeck();
 }
 function applyPreset(v){
   if(!v)return;
@@ -349,7 +351,10 @@ function cycleSort(tableId,col){
   else if(st.dir==="desc") st.dir="base";
   else st.dir="asc";
   sortState[tableId]=st;
-  if(tableId==="collection"){renderCollection();}
+  if(tableId==="customdeck"){
+    try{Storage.saveConfig({...Storage.loadConfig(),customDeckSort:JSON.stringify(st)});}catch(e){}
+    renderCustomDeck();
+  }else if(tableId==="collection"){renderCollection();}
   else if(tableId.startsWith("history-") && activeHistoryIndex!==null){showHistoryEntry(activeHistoryIndex);}
   else render();
 }
@@ -607,6 +612,7 @@ function loadConfig(){
   if(!o.deckSize)deckSize.value=rarityTotal();
   if(!o.ratioPreset)ratioPreset.value="base";
   if(ratioPreset.value==="custom")customRatio=normalizeRatio(needs());
+  if(o.customDeckSort){try{sortState["customdeck"]=JSON.parse(o.customDeckSort);}catch(e){}}
   mode.onchange();updatePriorityUI();
   // Clamp deckCount to what the collection actually supports on load.
   if(respectInv.checked){
@@ -615,7 +621,22 @@ function loadConfig(){
     if(inp&&+inp.value>maxD)inp.value=1;
   }
 }
-setup();initPriorityPrevious();updatePriorityUI();initConfigAutosave();generate();
+setup();initPriorityPrevious();updatePriorityUI();initConfigAutosave();generate();renderCustomDeck();
+(function restoreSection(){
+  const s=Storage.loadSection();
+  if(!s||s==="generator")return;
+  if(s==="collection"){openCollection();return;}
+  if(s==="history"){openHistory();return;}
+  if(s==="decks"||s==="customdeck"){
+    const isCustom=s==="customdeck";
+    document.getElementById("decks").style.display=isCustom?"none":"";
+    document.getElementById("customDeckSection").style.display=isCustom?"":"none";
+    document.body.classList.toggle("custom-mode",isCustom);
+    setStructuralActive(s);
+    const id=s==="decks"?"section-decks":"section-customdeck";
+    setTimeout(()=>document.getElementById(id)?.scrollIntoView({behavior:"instant",block:"start"}),0);
+  }
+})();
 
 setTimeout(()=>{let e=document.getElementById("seedInput");if(e&&!e.value)newSeed()},0);
 

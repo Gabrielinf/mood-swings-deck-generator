@@ -4,6 +4,7 @@
 <div class=row style="justify-content:space-between"><div><h1 id=tTitle>Mood Swings — Generador de Mazos</h1><nav class="app-section-nav" aria-label="Main sections">
 <button type="button" class="section-nav-btn active" data-section-target="generator"><span class="nav-icon">⚙</span> <span class="nav-label" data-nav-en="Generator" data-nav-es="Generador">Generator</span></button>
 <button type="button" class="section-nav-btn" data-section-target="decks"><span class="nav-icon">▦</span> <span class="nav-label" data-nav-en="Decks" data-nav-es="Mazos">Decks</span></button>
+<button type="button" class="section-nav-btn" data-section-target="customdeck" id="navCustomBtn"><span class="nav-icon">✦</span> <span class="nav-label" data-nav-en="Custom" data-nav-es="Custom">Custom</span><span class="nav-badge" id="customNavBadge"></span></button>
 <button type="button" class="section-nav-btn" data-section-target="collection"><span class="nav-icon">◫</span> <span class="nav-label" data-nav-en="Collection" data-nav-es="Colección">Collection</span></button>
 <button type="button" class="section-nav-btn" data-section-target="history"><span class="nav-icon">◷</span> <span class="nav-label" data-nav-en="History" data-nav-es="Historial">History</span></button>
 </nav><p id=tSub class=small></p></div><div class="lang-picker">
@@ -75,7 +76,21 @@
 
 <div id="section-decks" class="section-anchor"></div><input id="jsonImportInput" type="file" accept=".json,application/json" style="display:none" onchange="importDeckJSON(this.files[0],pendingJSONImportDeckIndex);this.value='';pendingJSONImportDeckIndex=null">
 <div id=status style="display:none"></div><div id=decks></div>
+</div>
 <div id="drawerOverlay" class="drawer-overlay" onclick="closeAllDrawers()"></div>
+<div id="section-customdeck" class="section-anchor"></div>
+<input id="customJsonImportInput" type="file" accept=".json,application/json" style="display:none" onchange="importCustomDeckJSON(this.files[0]);this.value=''">
+<div id="customDeckSection" style="display:none"></div>
+<aside id="addCardDrawer" class="collection-drawer">
+  <div class="drawer-head">
+    <h2 id="addCardDrawerTitle"></h2>
+    <button class="drawer-close" onclick="closeAddCardDrawer()">×</button>
+  </div>
+  <div class="drawer-tools">
+    <input id="addCardSearch" type="search" oninput="renderAddCardSearch()" placeholder="">
+  </div>
+  <div id="addCardResults" class="drawer-body"></div>
+</aside>
 <aside id="collectionDrawer" class="collection-drawer">
   <div class="drawer-head"><h2 id="drawerTitle"></h2><div class="drawer-head-actions"><button type="button" class="secondary collection-io-btn" id="collectionExportBtn" onclick="exportCollection()">Export JSON</button><button type="button" class="secondary collection-io-btn" id="collectionImportBtn" onclick="document.getElementById('collectionImportInput').click()">Import JSON</button><button type="button" class="collection-io-btn collection-reset-btn" id="collectionResetBtn" onclick="resetCollection()">Reset</button><input id="collectionImportInput" type="file" accept=".json,application/json" style="display:none" onchange="importCollection(this.files[0]);this.value=''"></div><button class="drawer-close" onclick="closeCollection()">×</button></div>
   <div class="drawer-tools">
@@ -121,12 +136,19 @@
   <button onclick="generateNew()" id="stickyGenerate" class="sticky-generate"></button>
   <button onclick="reroll()" id="stickyReroll" class="secondary sticky-reroll"></button>
 </div>
+<div id="stickyCustom" class="sticky-actions sticky-custom" style="display:none">
+  <span id="stickyCustomCount" class="sticky-count"></span>
+  <button onclick="customDeckSave()" class="sticky-generate" id="stickyCustomSave"></button>
+  <button onclick="customDeckCopyCode()" class="secondary sticky-reroll" id="stickyCustomMsc">MSC</button>
+</div>
 <script src="data/cards.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/state.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/generator.js"></script>
+<script src="js/msc.js"></script>
+<script src="js/customDeck.js"></script>
 <script src="js/collection.js"></script>
 <script src="js/history.js"></script>
 <script src="js/json.js"></script>

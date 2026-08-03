@@ -639,8 +639,15 @@ html,body{max-width:100%;overflow-x:hidden}
 .app-section-nav-placeholder.active{display:block}
 
 /* v107 UX polish */
-.app-section-nav.nav-floating{padding:5px!important;gap:5px!important}
-.app-section-nav.nav-floating .section-nav-btn{padding:6px 9px!important;font-size:11px!important}
+.app-section-nav.nav-floating{padding:5px!important;gap:3px!important}
+.app-section-nav.nav-floating .section-nav-btn{padding:6px 7px!important;font-size:10px!important}
+.app-section-nav.nav-floating .nav-label{display:none}
+.app-section-nav.nav-floating .nav-icon{font-size:16px}
+@media(max-width:560px){
+  .app-section-nav .nav-label{display:none}
+  .app-section-nav .nav-icon{font-size:15px}
+  .section-nav-btn{padding:7px 6px!important}
+}
 .config-primary-actions #tGenerate{min-height:38px!important;font-size:12px!important;box-shadow:0 2px 5px rgba(31,78,120,.18)}
 .config-primary-actions #tReroll{opacity:.88}
 .seed-section .seed-row button{padding:5px 7px!important;min-height:27px!important;font-size:9px!important}
@@ -698,6 +705,27 @@ html,body{max-width:100%;overflow-x:hidden}
   .qty-stepper input[type=number]{width:31px!important;height:25px;font-size:11px}
 }
 
+/* Custom Deck Editor */
+.custom-deck-summary{display:flex;flex-wrap:wrap;gap:5px;padding:8px 12px;border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.custom-deck-rows{padding:6px 12px 24px}
+.custom-deck-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f2f4f7}
+.custom-deck-row:last-child{border-bottom:0}
+.custom-deck-card-name{flex:1;min-width:0;font-size:13px}
+.custom-deck-rarity{font-size:11px;color:#667085;flex:none}
+.custom-search-row{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #f2f4f7;font-size:12px}
+.custom-search-row:last-child{border-bottom:0}
+.custom-search-row.unavailable{opacity:.55}
+.custom-search-name{flex:1;min-width:0}
+.custom-search-meta{flex:none;color:#667085;font-size:10px}
+.custom-search-qty{flex:none;font-weight:700;font-size:11px;color:#344054;background:#f2f4f7;border-radius:4px;padding:1px 5px}
+.custom-search-reason{flex:none;color:#b42318;font-size:10px}
+.custom-search-row button{flex:none;padding:3px 9px!important;min-height:24px!important;font-size:13px!important;font-weight:700}
+.custom-card-results{max-height:220px;overflow-y:auto;border:1px solid #e4e7ec;border-radius:8px;padding:4px 8px;margin-top:4px;background:#fff}
+@media(max-width:520px){
+  .custom-deck-row{flex-wrap:wrap}
+  .custom-card-results{max-height:160px}
+}
+
 /* Sticky action bar */
 .sticky-actions{
   position:fixed;bottom:0;left:0;right:0;z-index:75;
@@ -740,3 +768,75 @@ html,body{max-width:100%;overflow-x:hidden}
 }
 /* Add bottom padding to page so sticky bar doesn't cover content */
 body.has-sticky-bar .wrap{padding-bottom:64px}
+
+/* Custom Deck — same card sizing/spacing as generated decks */
+#customDeckSection>.card{padding:14px 16px;margin-bottom:12px;max-width:920px;box-sizing:border-box}
+#customDeckSection .deck-header-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+#customDeckSection .deck-header-row h2{display:flex;align-items:center;gap:5px;flex:1;min-width:0;margin:0;font-size:16px}
+#customDeckSection .deck-title-input{min-width:120px;max-width:280px;height:30px;padding:4px 7px;font-size:15px;font-weight:700}
+#customDeckSection .deck-header-row h2>.small{font-size:10px;white-space:nowrap;font-weight:500}
+#customDeckSection .deck-header-actions{gap:4px;flex-wrap:nowrap}
+#customDeckSection .deck-header-actions button{min-height:28px!important;height:28px;padding:4px 7px!important;font-size:10px!important;white-space:nowrap}
+#customDeckSection>.card>.grid,#customDeckSection .card>.grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:6px 0}
+#customDeckSection .grid .stat{min-width:0;padding:6px 4px;font-size:10px;line-height:1.15}
+#customDeckSection .grid .stat b{font-size:14px}
+#customDeckSection .table-scroll{margin-top:7px}
+#customDeckSection table th,#customDeckSection table td{padding-top:5px;padding-bottom:5px}
+#customDeckSection .change-btn{padding:4px 6px;font-size:10px;white-space:nowrap}
+@media(max-width:760px){
+  #customDeckSection .deck-header-row{align-items:flex-start;flex-wrap:wrap}
+  #customDeckSection .deck-header-row h2{width:100%}
+  #customDeckSection .deck-title-input{flex:1;max-width:none}
+  #customDeckSection .deck-header-actions{width:100%;justify-content:flex-start;flex-wrap:wrap}
+}
+@media(max-width:480px){
+  #customDeckSection>.card{padding:11px}
+  #customDeckSection .grid{gap:3px}
+  #customDeckSection .grid .stat{padding:5px 2px;font-size:9px}
+  #customDeckSection .deck-header-row h2>.small{font-size:9px}
+}
+/* Slot styles */
+.custom-slot-empty td{color:#98a2b3;font-style:italic}
+.custom-slot-num{color:#d0d5dd!important}
+.custom-slot-label{color:#98a2b3}
+.custom-remove-btn{background:#b42318!important;padding:4px 6px;font-size:10px}
+.custom-add-btn{background:#1f4e78;padding:4px 8px;font-size:10px}
+/* Add-card drawer search results */
+.custom-search-row{display:flex;align-items:center;gap:6px;padding:7px 12px;border-bottom:1px solid #eaecf0;font-size:13px}
+.custom-search-row:last-child{border-bottom:0}
+.custom-search-row:hover{background:#f8fafc}
+.custom-search-row.unavailable{opacity:.55}
+.custom-search-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.custom-search-meta{font-size:11px;color:#667085;flex:none}
+.custom-search-qty{font-size:11px;font-weight:700;color:#1f4e78;background:#eff8ff;border:1px solid #b2ddff;border-radius:999px;padding:1px 5px;flex:none}
+.custom-search-reason{color:#b42318;flex:none;font-size:11px}
+.custom-search-row button{flex:none;padding:5px 10px;font-size:12px;min-height:28px}
+@media(max-width:520px){.custom-search-row{padding:6px 8px;font-size:12px}}
+
+/* MSC code bar */
+.msc-bar{display:flex;align-items:center;gap:7px;padding:7px 10px;margin:6px 0;background:#f9fafb;border:1px solid #e4e7ec;border-radius:8px;flex-wrap:wrap}
+.msc-label{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#667085;flex:none}
+.msc-code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;font-weight:700;color:#101828;letter-spacing:.04em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msc-btn{padding:4px 9px!important;font-size:10px!important;min-height:24px!important;flex:none}
+.msc-code-empty{color:#98a2b3!important;font-style:italic}
+.msc-import-row{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+.msc-import-input{flex:1;min-width:160px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;padding:4px 8px;border:1px solid #d0d5dd;border-radius:7px}
+.msc-import-status{font-size:10px;font-weight:700;flex:none}
+.msc-import-status.ok{color:#027a48}.msc-import-status.bad{color:#b42318}
+.custom-deck-config-hint{margin:0 0 8px;padding:6px 9px;background:#f9fafb;border:1px solid #e4e7ec;border-radius:7px;font-size:10px;color:#667085;line-height:1.4}
+@media(max-width:520px){.msc-bar{gap:5px}.msc-code{font-size:10px}.msc-import-input{min-width:120px}}
+
+/* Custom mode: hide seed + generate actions and sticky bar */
+body.custom-mode .seed-section,
+body.custom-mode .config-primary-actions,
+body.custom-mode .toolbar.deck-actions,
+body.custom-mode #stickyActions{display:none!important}
+
+/* Nav badge */
+.nav-badge{display:none;min-width:16px;height:16px;padding:0 4px;background:#1f4e78;color:#fff;border-radius:999px;font-size:9px;font-weight:800;line-height:16px;text-align:center;margin-left:3px;flex:none}
+.section-nav-btn.active .nav-badge{background:rgba(255,255,255,.25);color:#fff}
+
+/* Custom sticky bar */
+.sticky-custom{z-index:74}
+.sticky-custom .sticky-generate{font-size:11px}
+.sticky-custom .sticky-reroll{font-size:11px;padding:7px 12px}

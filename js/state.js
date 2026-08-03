@@ -11,6 +11,14 @@ let decks     = [];
 let locks     = {};
 let deckNames = [];
 
+// Custom deck state (single deck, own section) — persisted in localStorage
+const _savedCustomDeck=Storage.loadCustomDeck();
+const _cardMap=Object.fromEntries(cards.map(x=>[x.n,x]));
+let customDeck     = _savedCustomDeck&&Array.isArray(_savedCustomDeck.cards)
+  ? _savedCustomDeck.cards.map(n=>_cardMap[n]).filter(Boolean)
+  : [];
+let customDeckName = _savedCustomDeck?.name||"";
+
 // Generator state
 let activeGenerationSeed = "";
 let activeGenerationRng  = Math.random;

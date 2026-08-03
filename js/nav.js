@@ -17,15 +17,18 @@ document.addEventListener("click",e=>{
  const b=e.target.closest(".section-nav-btn"); if(!b)return;
  const target=b.dataset.sectionTarget;
  if(target==="collection"){
-   closeSwapModal();closeNoteModal();openCollection();return;
+   closeSwapModal();closeNoteModal();openCollection();Storage.saveSection("collection");return;
  }
  if(target==="history"){
-   closeSwapModal();closeNoteModal();openHistory();return;
+   closeSwapModal();closeNoteModal();openHistory();Storage.saveSection("history");return;
  }
- // Generator and Decks are page sections: close any open drawer before navigating.
- if(target==="generator"||target==="decks"){
+ // Page sections: close any open drawer then scroll to anchor.
+ if(target==="generator"||target==="decks"||target==="customdeck"){
    closeSwapModal();closeNoteModal();
-   // Force immediate visual hide in case browser defers the reflow
+   const isCustom=target==="customdeck";
+   document.getElementById("decks").style.display=isCustom?"none":"";
+   document.getElementById("customDeckSection").style.display=isCustom?"":"none";
+   document.body.classList.toggle("custom-mode",isCustom);
    const so=document.getElementById("swapOverlay");if(so)so.style.display="none";
    const collection=document.getElementById("collectionDrawer");
    const history=document.getElementById("historyDrawer");
@@ -34,8 +37,10 @@ document.addEventListener("click",e=>{
    if(history)history.classList.remove("open");
    if(overlay)overlay.classList.remove("open");
    document.body.classList.remove("drawer-open");
-   const el=document.getElementById(target==="generator"?"section-generator":"section-decks");
+   const anchorId=target==="generator"?"section-generator":target==="decks"?"section-decks":"section-customdeck";
+   const el=document.getElementById(anchorId);
    setStructuralActive(target);lockStructuralNav();
+   Storage.saveSection(target);
    if(el)setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"start"}),0);
    return;
  }
@@ -64,6 +69,7 @@ setTimeout(updateStructuralNavigationLanguage,0);
     function updateActiveSection(){
       if(syncStructuralActiveFromUI())return;
       if(Date.now()<structuralNavLockUntil)return;
+      if(document.body.classList.contains("custom-mode")){setStructuralActive("customdeck");return;}
       const line=nav.classList.contains("nav-floating")?nav.getBoundingClientRect().bottom+14:90;
       const decksEl=document.getElementById("decks");
       const section=(decksEl&&decksEl.children.length&&decksEl.getBoundingClientRect().top<=line)?"decks":"generator";

@@ -126,7 +126,9 @@ async function openNoteModal(number){
   await loadCardRulesData();
   let card=cards.find(x=>x.n===+number);if(!card)return;
   let info=cardRulesByName[card.name.toLowerCase()]||{};
-  let rules=info.rules_text||"", notes=Array.isArray(info.notes)?info.notes:[], errata=info.errata||"";
+  let rules=info.rules_text||"", notes=Array.isArray(info.notes)?info.notes:[];
+  let errataRaw=info.errata||"";
+  let errata=errataRaw&&typeof errataRaw==="object"?(errataRaw.note||""):errataRaw;
   document.getElementById("noteTitle").textContent=`#${card.n} · ${card.name}`;
   let body=document.getElementById("noteBody");
   body.innerHTML=`<p class="small">${label(card.color)} · ${card.rarity}${diceDisplay(info)?" · "+diceDisplay(info):""}</p><p class="small">${"Loading…"}</p>`;

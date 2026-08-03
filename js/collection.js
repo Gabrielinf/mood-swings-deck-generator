@@ -58,7 +58,7 @@ function closeCollection(){
   refreshDeckCollectionStatus();
   if(!syncStructuralActiveFromUI())window.dispatchEvent(new Event("scroll"));
 }
-function closeAllDrawers(){closeCollection();closeHistory()}
+function closeAllDrawers(){closeCollection();closeHistory();}
 
 function clearCollectionFilters(){
   let a=document.getElementById("collectionOwnershipFilter"),b=document.getElementById("collectionColorFilter"),c=document.getElementById("collectionRarityFilter");

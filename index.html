@@ -1,33 +1,39 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Mood Swings Deck Generator</title><link rel="icon" href="data:,"><link rel="stylesheet" href="css/main.css"></head>
-<body><div id="appToast" class="app-toast" role="status" aria-live="polite"></div><div class=wrap>
-<div class=row style="justify-content:space-between"><div><h1 id=tTitle>Mood Swings — Generador de Mazos</h1><nav class="app-section-nav" aria-label="Main sections">
-<button type="button" class="section-nav-btn active" data-section-target="generator"><span class="nav-icon">⚙</span> <span class="nav-label" data-nav-en="Generator" data-nav-es="Generador">Generator</span></button>
-<button type="button" class="section-nav-btn" data-section-target="decks"><span class="nav-icon">▦</span> <span class="nav-label" data-nav-en="Decks" data-nav-es="Mazos">Decks</span></button>
-<button type="button" class="section-nav-btn" data-section-target="customdeck" id="navCustomBtn"><span class="nav-icon">✦</span> <span class="nav-label" data-nav-en="Custom" data-nav-es="Custom">Custom</span><span class="nav-badge" id="customNavBadge"></span></button>
-<button type="button" class="section-nav-btn" data-section-target="collection"><span class="nav-icon">◫</span> <span class="nav-label" data-nav-en="Collection" data-nav-es="Colección">Collection</span></button>
-<button type="button" class="section-nav-btn" data-section-target="history"><span class="nav-icon">◷</span> <span class="nav-label" data-nav-en="History" data-nav-es="Historial">History</span></button>
-</nav><p id=tSub class=small></p></div><div class="lang-picker">
+<body><script>if(localStorage.getItem("msSection")==="customdeck")document.body.classList.add("custom-mode");</script><div id="appToast" class="app-toast" role="status" aria-live="polite"></div><div class=wrap>
+<p id=tSub class=small></p>
+<div class=row style="justify-content:space-between"><div><h1 id=tTitle>Mood Swings — Generador de Mazos</h1></div><div style="display:flex;gap:8px;align-items:center">
+<button type="button" class="help-btn secondary" onclick="openHowToUse()" title="How to use">?</button>
+<div class="lang-picker">
 <button type="button" id="langButton" class="lang-button secondary" onclick="toggleLangMenu()"></button>
 <div id="langMenu" class="lang-menu" style="display:none">
 <button type="button" onclick="setLang('es');closeLangMenu()"><span class="flag-svg flag-es"></span><span>Español</span></button>
 <button type="button" onclick="setLang('en');closeLangMenu()"><span class="flag-svg flag-gb"></span><span>English</span></button>
-</div></div></div>
+</div></div></div></div>
+<nav class="app-section-nav" aria-label="Main sections">
+<button type="button" class="section-nav-btn active" data-section-target="generator"><span class="nav-icon">⚙</span> <span class="nav-label" data-nav-en="Deck Generator" data-nav-es="Generador de Mazos">Deck Generator</span></button>
+<button type="button" class="section-nav-btn" data-section-target="customdeck" id="navCustomBtn"><span class="nav-icon">✦</span> <span class="nav-label" data-nav-en="Custom Deck" data-nav-es="Mazo Custom">Custom Deck</span><span class="nav-badge" id="customNavBadge"></span></button>
+<button type="button" class="section-nav-btn" data-section-target="collection"><span class="nav-icon">◫</span> <span class="nav-label" data-nav-en="Card Collection" data-nav-es="Colección de Cartas">Card Collection</span></button>
+<button type="button" class="section-nav-btn" data-section-target="history"><span class="nav-icon">◷</span> <span class="nav-label" data-nav-en="History" data-nav-es="Historial">History</span></button>
+</nav>
 <div id="section-generator" class="section-anchor"></div><div class="card deck-config-card"><h2 id=tConfig></h2>
 
-<div class="config-section">
-  <div class="config-section-title" data-en="General" data-es="General">General</div>
+<div class="config-section config-section-header">
+  <div class="config-section-main-title" data-en="Configuration" data-es="Configuración">Configuración</div>
+</div>
+<div class="config-section config-subsection">
+  <div class="config-section-title" data-en="Deck" data-es="Mazo">Mazo</div>
   <div class="config-general-grid">
     <label class="general-inline-field"><span id=tDeckSize></span><input id=deckSize type=number min=1 value=45 onchange="syncRaritiesToDeckSize()"></label>
-    <label class="general-inline-field"><span id=tCopies></span><input id=maxCopies type=number min=1 value=1></label>
-    <label class="general-inline-field"><span id=tDecks></span><input id=deckCount type=number min=1 max=20 value=1></label>
+    <label class="general-inline-field"><span id=tCopies></span><input id=maxCopies type=number min=1 max=9 value=1></label>
+    <label class="general-inline-field custom-mode-hide"><span id=tDecks></span><input id=deckCount type=number min=1 max=10 value=1></label>
   </div>
-  <div class="config-inventory-row"><div class="inventory-inline-wrap"><label class="inventory-inline"><input id=respectInv type=checkbox onchange="updateDeckCountHelp()"> <span id=tInventory></span></label><span id=tInventoryHelp class="small inventory-inline-help"></span><span id="deckCountHelp" class="field-help deck-count-help"></span></div></div>
+  <div class="config-inventory-row"><div class="inventory-inline-wrap"><label class="inventory-inline"><input id=respectInv type=checkbox onchange="updateDeckCountHelp()"> <span id=tInventory></span></label><span id=tInventoryHelp class="small inventory-inline-help"></span><span id="deckCountHelp" class="field-help deck-count-help custom-mode-hide"></span></div></div>
 </div>
 
-<div class="config-section">
-  <div class="config-section-title" data-en="Rarities" data-es="Rarezas">Rarities</div>
-  <div class="rarity-config">
+<div class="config-section config-collapsible" id="configSectionRarities">
+  <div class="config-section-title config-section-toggle" onclick="toggleConfigSection('configSectionRarities')" data-en="Rarities" data-es="Rarezas"><span class="config-section-label">Rarezas</span> <span class="config-section-summary" id="raritiesSummary"></span><span class="config-collapse-icon">⌄</span></div>
+  <div class="rarity-config config-collapsible-content">
     <label class="ratio-preset-field"><span id=tRatioPreset></span><br><select id=ratioPreset onchange="applyRatioPreset(this.value)">
       <option value="base"></option><option value="commonHeavy"></option><option value="balancedRarity"></option><option value="rareHeavy"></option><option value="custom"></option>
     </select></label>
@@ -40,19 +46,19 @@
   </div>
 </div>
 
-<div class="config-section">
-  <div class="config-section-title" data-en="Colors" data-es="Colores">Colors</div>
-  <div class="color-top-grid">
+<div class="config-section config-collapsible" id="configSectionColors">
+  <div class="config-section-title config-section-toggle" onclick="toggleConfigSection('configSectionColors')" data-en="Colors" data-es="Colores"><span class="config-section-label">Colores</span> <span class="config-section-summary" id="colorsSummary"></span><span class="config-collapse-icon">⌄</span></div>
+  <div class="color-top-grid config-collapsible-content">
     <label><span id=tMode></span><br><select id=mode><option value=balanced>Equilibrado automático</option><option value=free>Colores libres</option><option value=manual>Distribución manual</option></select></label>
     <label><span id=tPreset></span><br><select id=preset onchange="applyPreset(this.value)">
       <option value="">—</option><option value=standard></option><option value=priority></option><option value=twoColor></option><option value=threeColor></option><option value=manual></option>
     </select></label>
     <label><span id=tPriorityMode></span><br><select id=priorityMode onchange="updatePriorityUI()"><option value=random></option><option value=fixed></option></select></label>
   </div>
-  <div id=priorityControls class="priority-compact">
+  <div id=priorityControls class="priority-compact config-collapsible-content">
     <label>1° <select id=prio1></select></label><label>2° <select id=prio2></select></label><label>3° <select id=prio3></select></label><label>4° <select id=prio4></select></label><label>5° <select id=prio5></select></label>
   </div>
-  <div id=manual style="display:none"><h3 id=tManual></h3><table><tr><th></th><th>⚪</th><th>🔵</th><th>⚫</th><th>🔴</th><th>🟢</th></tr><tbody id=manualBody></tbody></table></div>
+  <div id=manual class="config-collapsible-content" style="display:none"><h3 id=tManual></h3><table><tr><th></th><th>⚪</th><th>🔵</th><th>⚫</th><th>🔴</th><th>🟢</th></tr><tbody id=manualBody></tbody></table></div>
 </div>
 
 <div class="config-section seed-section">
@@ -113,7 +119,7 @@
   <div id="collectionStats" class="collection-stats-panel"></div>
   <div id="collection" class="drawer-body"></div>
 </aside>
-</div><aside id="historyDrawer" class="collection-drawer">
+<aside id="historyDrawer" class="collection-drawer">
   <div class="drawer-head"><h2 id="historyDrawerTitle"></h2><button class="drawer-close" onclick="closeHistory()">×</button></div>
   <div class="history-toolbar">
     <input id="historySearch" type="search" oninput="renderHistoryList()" placeholder="Buscar mazos">
@@ -141,6 +147,17 @@
   <button onclick="customDeckSave()" class="sticky-generate" id="stickyCustomSave"></button>
   <button onclick="customDeckCopyCode()" class="secondary sticky-reroll" id="stickyCustomMsc">MSC</button>
 </div>
+</div>
+<div id="howToUseOverlay" class="how-to-use-overlay" onclick="if(event.target===this)closeHowToUse()">
+  <div class="how-to-use-modal">
+    <div class="how-to-use-header">
+      <h2 id="howToUseTitle">Cómo usar</h2>
+      <button class="drawer-close" onclick="closeHowToUse()">×</button>
+    </div>
+    <div class="how-to-use-tabs" id="howToUseTabs"></div>
+    <div class="how-to-use-body" id="howToUseBody"></div>
+  </div>
+</div>
 <script src="data/cards.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/utils.js"></script>
@@ -153,6 +170,7 @@
 <script src="js/history.js"></script>
 <script src="js/json.js"></script>
 <script src="js/cardPreview.js"></script>
+<script src="js/howToUse.js"></script>
 <script src="js/nav.js"></script>
 <script src="js/app.js"></script>
 </body></html>

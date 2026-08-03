@@ -67,7 +67,7 @@ async function showCardPreview(number,event){
   let card=cards.find(x=>x.n===+number),url=cardImageByNumber[String(number)];if(!card)return;
   let info=cardRulesByName[card.name.toLowerCase()]||null;
   let box=document.getElementById("cardPreview"),img=document.getElementById("cardPreviewImg");
-  if(url){img.src=url;img.alt=card.name;img.style.display="block"}else{img.removeAttribute("src");img.style.display="none"}
+  if(url){img.style.opacity="0";img.src=url;img.alt=card.name;img.style.display="block";img.onload=()=>{img.style.transition="opacity .15s";img.style.opacity="1"};}else{img.removeAttribute("src");img.style.display="none"}
   document.getElementById("cardPreviewCaption").textContent=`#${card.n} · ${card.name} · ${label(card.color)} · ${card.rarity}`;
   let meta=[];
   if(info&&info.color&&info.color.length)meta.push(info.color.join(" / "));

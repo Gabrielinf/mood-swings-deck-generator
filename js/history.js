@@ -1,3 +1,18 @@
+document.addEventListener("click",e=>{
+  const chip=e.target.closest(".copyable-chip");
+  if(chip){e.stopPropagation();_historyCopyValue(chip.dataset.copy||"");}
+});
+
+async function _historyCopyValue(value){
+  if(!value)return;
+  try{await navigator.clipboard.writeText(value);}
+  catch(e){
+    const ta=document.createElement("textarea");ta.value=value;
+    document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();
+  }
+  showToast(language==="es"?"Copiado ✓":"Copied ✓");
+}
+
 function _historyMscCode(deck){
   if(!deck||!Array.isArray(deck.cards)||!deck.cards.length)return "";
   try{
@@ -83,7 +98,7 @@ function historyGenerationInventoryStatus(entry){
   const issues=Object.entries(counts).map(([n,need])=>{
     const card=cards.find(x=>x.n===+n),have=card?Math.max(0,+card.qty||0):0;
     return {card,need,have,missing:Math.max(0,need-have)};
-  }).filter(x=>x.missing>0).sort((a,b)=>b.missing-a.missing||((a.card?.n||0)-(b.card?.n||0)));
+  }).filter(x=>x.missing>0&&x.card).sort((a,b)=>b.missing-a.missing||((a.card?.n||0)-(b.card?.n||0)));
   return {valid:issues.length===0,issues,missingCopies:issues.reduce((a,x)=>a+x.missing,0)};
 }
 function historyGenerationInventoryBadge(entry){
@@ -119,15 +134,26 @@ function renderHistoryList(){
   const sort=sortEl?.value||"newest";
   if(sort==="oldest")rows.reverse();
   else if(sort==="name")rows.sort((a,b)=>(a.z.decks[0]?.name||"").localeCompare(b.z.decks[0]?.name||"",language==="es"?"es":"en",{numeric:true,sensitivity:"base"}));
-  el.innerHTML=rows.length?rows.map(({z,i})=>`<div class="history-item" onclick="showHistoryEntry(${i})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showHistoryEntry(${i})}">
+  el.innerHTML=rows.length?rows.map(({z,i})=>{
+    const isCustom=z.type==="custom";
+    const seedVal=z.seed||"";
+    const mscVals=z.decks.map(d=>_historyMscCode(d)).filter(Boolean);
+    const tip=language==="es"?"Clic para copiar":"Click to copy";
+    const enc=v=>v.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+    const seedChip=seedVal?`<span class="history-code-chip copyable-chip" data-copy="${enc(seedVal)}" title="${tip}">Seed: ${enc(seedVal)}</span>`:"";
+    const mscChips=mscVals.map((code,mi)=>`<span class="history-code-chip copyable-chip" data-copy="${enc(code)}" title="${tip}">MSC${mscVals.length>1?` ${mi+1}`:""}:  ${enc(code)}</span>`).join("");
+    return `<div class="history-item" onclick="showHistoryEntry(${i})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showHistoryEntry(${i})}">
     ${z.decks.map((d,di)=>`<div class="history-list-deck">
       <span class="history-list-deck-name">${d.name} ${historyInventoryBadge(d)}</span>
       <button class="history-list-delete" onclick="deleteHistoryDeckFromList(event,${i},${di})">🗑 ${T("deleteDeck")}</button>
     </div>`).join("")}
+    <div class="history-list-codes">${seedChip}${mscChips}</div>
     <div class="history-generation-status">${historyGenerationInventoryBadge(z)}</div>
     <div class="history-date">${z.date}</div>
     <span class="small">${z.decks.reduce((a,d)=>a+d.cards.length,0)} ${T("cardsWord")}${historyModeLabel(z)?" · "+historyModeLabel(z):""}</span>
-  </div>`).join(""):`<p class="small">${q?(language==="es"?"No hay mazos que coincidan con la búsqueda.":"No decks match your search."):(language==="es"?"Todavía no hay mazos guardados.":"No saved decks yet.")}</p>`;
+  </div>`;}).join(""):q
+  ?`<p class="small" style="padding:12px">${language==="es"?"No hay mazos que coincidan con la búsqueda.":"No decks match your search."}</p>`
+  :`<div class="history-empty-state"><span class="empty-icon">◷</span><p>${language==="es"?"Todavía no hay mazos guardados.<br>Genera un mazo y guárdalo con 💾.":"No saved decks yet.<br>Generate a deck and save it with 💾."}</p></div>`;
   if(searchEl)searchEl.placeholder=language==="es"?"Buscar mazos":"Search decks";
   if(sortEl){
     sortEl.options[0].text=language==="es"?"Más recientes":"Newest first";
@@ -146,12 +172,10 @@ function _deleteHistoryDeckShared(entryIndex,deckIndex){
 }
 function deleteHistoryDeckFromList(event,entryIndex,deckIndex){
   event.stopPropagation();
-  if(!confirm(T("deleteDeckConfirm")))return;
-  _deleteHistoryDeckShared(entryIndex,deckIndex);
+  _customConfirm(T("deleteDeckConfirm"),()=>_deleteHistoryDeckShared(entryIndex,deckIndex));
 }
 function deleteHistoryDeck(entryIndex,deckIndex){
-  if(!confirm(T("deleteDeckConfirm")))return;
-  _deleteHistoryDeckShared(entryIndex,deckIndex);
+  _customConfirm(T("deleteDeckConfirm"),()=>_deleteHistoryDeckShared(entryIndex,deckIndex));
 }
 function historyTypeBadge(z){
   const es=language==="es";
@@ -165,8 +189,11 @@ function showHistoryEntry(index){
   const z=getHistory()[index],el=document.getElementById("historyList");if(!z)return;
   const es=language==="es";
   const isGenerated=z.type!=="custom";
-  const mscCode=!isGenerated&&z.decks[0]?_historyMscCode(z.decks[0]):"";
-  const metaHtml=(z.seed||z.configuration||!isGenerated)?`<div class="history-generation-meta">${z.seed?`<span class="history-seed">Seed: ${z.seed}</span>`:""}${z.configuration?`<span>${es?"Tamaño":"Size"}: ${z.configuration.deckSize||"—"}</span><span>${es?"Modo":"Mode"}: ${z.configuration.mode||"—"}</span>`:""}${mscCode?`<span class="history-seed">${mscCode}</span>`:""}</div>
+  // MSC for all entries: custom uses deck[0], generated shows one chip per deck
+  const mscCodes=z.decks.map(d=>_historyMscCode(d)).filter(Boolean);
+  const tip2=es?"Clic para copiar":"Click to copy";
+  const enc2=v=>v.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+  const metaHtml=(z.seed||z.configuration||mscCodes.length)?`<div class="history-generation-meta">${z.seed?`<span class="history-seed history-code-chip copyable-chip" data-copy="${enc2(z.seed)}" title="${tip2}">Seed: ${enc2(z.seed)}</span>`:""}${z.configuration?`<span>${es?"Tamaño":"Size"}: ${z.configuration.deckSize||"—"}</span><span>${es?"Modo":"Mode"}: ${z.configuration.mode||"—"}</span>`:""}${mscCodes.map((code,mi)=>`<span class="history-seed history-code-chip history-code-chip-full copyable-chip" data-copy="${enc2(code)}" title="${tip2}">MSC${mscCodes.length>1?` ${mi+1}`:""}:  ${enc2(code)}</span>`).join("")}</div>
   <div class="history-config-actions">
     ${isGenerated&&z.seed?`<button type="button" class="secondary history-restore-btn" onclick="copyHistorySeed(${index})">${es?"Copiar seed":"Copy seed"}</button>`:""}
     ${isGenerated?`<button type="button" class="secondary history-restore-btn" onclick="restoreHistoryConfiguration(${index})">↩ ${es?"Restaurar configuración":"Restore configuration"}</button>`:""}
@@ -175,16 +202,34 @@ function showHistoryEntry(index){
   </div>`:"";
   el.innerHTML=`<button class="secondary history-back" onclick="activeHistoryIndex=null;renderHistoryList()">← ${es?"Volver al historial":"Back to history"}</button>
   <p class="small"><b>${z.date}</b> ${historyTypeBadge(z)}</p>
-  <div class="history-generation-summary">${historyGenerationInventoryBadge(z)}${historyGenerationIssues(z)}</div>
+  <div class="history-generation-summary">${historyGenerationInventoryBadge(z)}</div>
   ${metaHtml}`+
   z.decks.map((deck,i)=>{
     const d=deck.cards.map(n=>cards.find(x=>x.n===+n)).filter(Boolean);
     const cc=Object.fromEntries(colors.map(c=>[c,d.filter(x=>x.color===c).length]));
     const tableId="history-"+index+"-"+i;
+    // Build per-card missing map for this deck
+    const deckCounts={};
+    deck.cards.forEach(n=>{deckCounts[+n]=(deckCounts[+n]||0)+1;});
+    const missingMap={};
+    Object.entries(deckCounts).forEach(([n,need])=>{
+      const card=cards.find(x=>x.n===+n);
+      const have=card?Math.max(0,+card.qty||0):0;
+      const missing=Math.max(0,need-have);
+      if(missing>0)missingMap[+n]={need,have,missing};
+    });
+    const hasMissing=Object.keys(missingMap).length>0;
     return `<div class="history-detail">
       <div class="history-deck-head"><h2><input class="deck-title-input" value="${deck.name.replace(/"/g,"&quot;")}" onchange="renameHistoryDeck(${index},${i},this.value)"> <span class="small">— ${d.length} ${T("cardsWord")}</span> ${historyInventoryBadge(deck)}</h2><button class="delete-deck-btn" onclick="deleteHistoryDeck(${index},${i})">🗑 ${T("deleteDeck")}</button></div>
       <div class="grid">${colors.map(c=>`<div class="stat ${c}">${colorIcon(c)} ${label(c)}<br><b>${cc[c]}</b></div>`).join("")}</div>
-      <div class="table-scroll"><table><tr>${sortableHeader(tableId,"n","#")}${sortableHeader(tableId,"name",T("card"))}${sortableHeader(tableId,"color",T("color"))}${sortableHeader(tableId,"rarity",T("rarity"))}</tr>
-      ${sortedRows(d,tableId).map(x=>`<tr class="${x.color}"><td>${x.n}</td><td>${cardNameHtml(x)}</td><td>${colorIcon(x.color)} ${label(x.color)}</td><td>${x.rarity}</td></tr>`).join("")}</table></div></div>`;
+      <div class="table-scroll"><table><tr>${sortableHeader(tableId,"n","#")}${sortableHeader(tableId,"name",T("card"))}${sortableHeader(tableId,"color",T("color"))}${sortableHeader(tableId,"rarity",T("rarity"))}${hasMissing?`<th>${es?"Colección":"Collection"}</th>`:""}</tr>
+      ${sortedRows(d,tableId).map(x=>{
+        const m=missingMap[x.n];
+        const rowClass=m?"history-row-missing":"";
+        const missingCell=hasMissing?(m
+          ?`<td class="history-missing-cell">⚠ ${es?"Faltan":"Missing"} ${m.missing}</td>`
+          :`<td class="history-ok-cell">✓</td>`):"";
+        return `<tr class="${x.color} ${rowClass}"><td>${x.n}</td><td>${cardNameHtml(x)}</td><td>${colorIcon(x.color)} ${label(x.color)}</td><td>${x.rarity}</td>${missingCell}</tr>`;
+      }).join("")}</table></div></div>`;
   }).join("");
 }

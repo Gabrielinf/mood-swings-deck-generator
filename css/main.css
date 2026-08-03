@@ -7,9 +7,9 @@ body{font-family:system-ui,Segoe UI,sans-serif;margin:0;background:#f5f6f8;color
 .flag-es{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20'%3E%3Crect width='30' height='20' fill='%23AA151B'/%3E%3Crect y='5' width='30' height='10' fill='%23F1BF00'/%3E%3C/svg%3E")}
 .flag-gb{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Crect width='60' height='30' fill='%23012169'/%3E%3Cpath d='M0 0L60 30M60 0L0 30' stroke='%23fff' stroke-width='6'/%3E%3Cpath d='M0 0L60 30M60 0L0 30' stroke='%23C8102E' stroke-width='3'/%3E%3Cpath d='M30 0V30M0 15H60' stroke='%23fff' stroke-width='10'/%3E%3Cpath d='M30 0V30M0 15H60' stroke='%23C8102E' stroke-width='6'/%3E%3C/svg%3E")}
 
-.drawer-overlay{position:fixed;inset:0;background:#0005;z-index:510;display:none}
+.drawer-overlay{position:fixed;inset:0;background:#0005;z-index:510;visibility:hidden;pointer-events:none;opacity:0;transition:opacity .22s ease,visibility .22s ease}
 .collection-drawer{position:fixed;right:0;top:0;height:100vh;width:min(520px,94vw);background:#fff;z-index:520;box-shadow:-10px 0 30px #0003;transform:translateX(105%);transition:transform .22s ease;display:flex;flex-direction:column}
-.collection-drawer.open{transform:translateX(0)}.drawer-overlay.open{display:block}
+.collection-drawer.open{transform:translateX(0)}.drawer-overlay.open{visibility:visible;pointer-events:auto;opacity:1}
 .drawer-head{padding:16px;border-bottom:1px solid #e5e7eb;display:flex;gap:10px;align-items:center;justify-content:space-between}
 .drawer-head h2{margin:0;flex:1}
 .drawer-head-actions{display:flex;gap:5px;flex:none}
@@ -132,7 +132,7 @@ html,body{max-width:100%;overflow-x:hidden}
 #refCardPreview .ref-caption{padding:5px 4px 2px;color:#fff;font-size:12px;text-align:center}
 @media(max-width:700px){#refCardPreview{width:min(235px,70vw);left:50%!important;top:50%!important;transform:translate(-50%,-50%);pointer-events:auto}.card-ref-preview{cursor:pointer}}
 
-.app-section-nav{position:sticky;top:0;z-index:80;display:flex;gap:8px;margin:10px 0 14px;padding:8px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border:1px solid #e4e7ec;border-radius:12px}
+.app-section-nav{position:sticky;top:0;z-index:80;display:flex;gap:8px;margin:10px 0 14px;padding:8px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border:1px solid #e4e7ec;border-radius:12px;max-width:920px;box-sizing:border-box}
 .section-nav-btn{flex:1;border:1px solid transparent;background:transparent;border-radius:9px;padding:9px 12px;font-weight:650;cursor:pointer;color:#475467;display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;overflow:hidden}
 .section-nav-btn:hover{background:#f2f4f7}.section-nav-btn.active{background:#101828;color:#fff}
 .nav-icon{flex:none;font-size:14px;line-height:1}
@@ -144,6 +144,7 @@ html,body{max-width:100%;overflow-x:hidden}
 }
 @media(max-width:430px){
   .section-nav-btn{flex-direction:column;gap:2px;padding:6px 2px;font-size:9px}
+  .nav-label{font-size:8px}
   .nav-icon{font-size:16px}
 }
 
@@ -171,6 +172,10 @@ html,body{max-width:100%;overflow-x:hidden}
 
 .seed-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}
 .seed-row input{width:170px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+
+/* Collection table: alternating rows */
+#collectionDrawer .table-scroll tr:nth-child(even) td{background:#f9fafb}
+#collectionDrawer .table-scroll tr:hover td{background:#f0f4f8}
 
 /* Collection table: fit all columns inside the drawer without horizontal clipping. */
 #collectionDrawer .table-scroll{overflow-x:hidden}
@@ -235,6 +240,24 @@ html,body{max-width:100%;overflow-x:hidden}
 .missing-card-link{border:0;background:none;color:inherit;padding:0;font:inherit;font-weight:700;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .missing-card-link:hover{opacity:.75}
 
+/* History: copiable seed/MSC chip */
+.history-list-codes{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 2px;max-height:52px;overflow:hidden}
+.history-code-chip{
+  display:inline-block;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  font-size:10px;padding:2px 7px;border-radius:999px;
+  background:#f2f4f7;border:1px solid #e4e7ec;color:#344054;
+  cursor:pointer;user-select:none;margin:3px 0;max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;
+}
+.history-code-chip:hover{background:#e4e7ec;border-color:#d0d5dd}
+.history-code-chip:active{background:#d0d5dd}
+
+/* History table: missing card rows */
+.history-row-missing td{background:rgba(180,35,24,.05)!important}
+.history-row-missing td:first-child{border-left:3px solid #b42318}
+.history-missing-cell{color:#b42318;font-size:11px;font-weight:700;white-space:nowrap}
+.history-ok-cell{color:#027a48;font-size:11px;text-align:center}
+
 .history-generation-meta{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0 9px}
 .history-generation-meta span{font-size:11px;padding:4px 7px;border:1px solid #e4e7ec;border-radius:999px;background:#f9fafb;color:#475467}
 .history-seed{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
@@ -246,6 +269,22 @@ html,body{max-width:100%;overflow-x:hidden}
   gap:5px;
   width:100%;
 }
+/* History table: fit inside drawer, no horizontal scroll */
+#historyList .history-detail .table-scroll{overflow-x:hidden}
+#historyList .history-detail .table-scroll table{min-width:0!important;width:100%;table-layout:fixed;font-size:12px}
+#historyList .history-detail .table-scroll th,
+#historyList .history-detail .table-scroll td{padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-sizing:border-box}
+#historyList .history-detail .table-scroll th:nth-child(1),
+#historyList .history-detail .table-scroll td:nth-child(1){width:7%;text-align:center}
+#historyList .history-detail .table-scroll th:nth-child(2),
+#historyList .history-detail .table-scroll td:nth-child(2){width:36%}
+#historyList .history-detail .table-scroll th:nth-child(3),
+#historyList .history-detail .table-scroll td:nth-child(3){width:21%}
+#historyList .history-detail .table-scroll th:nth-child(4),
+#historyList .history-detail .table-scroll td:nth-child(4){width:16%;text-align:center}
+#historyList .history-detail .table-scroll th:nth-child(5),
+#historyList .history-detail .table-scroll td:nth-child(5){width:20%;text-align:center}
+.history-missing-cell,.history-ok-cell{white-space:nowrap;font-size:10px}
 #historyList .history-detail .stat{
   min-width:0;
   padding:8px 3px;
@@ -459,7 +498,18 @@ html,body{max-width:100%;overflow-x:hidden}
 .deck-config-card>h2{margin:0 0 8px!important}
 .config-section{padding:8px 0;border-top:1px solid #eaecf0}
 .config-section:first-of-type{border-top:0;padding-top:2px}
-.config-section-title{margin-bottom:6px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#667085}
+.config-section-header{padding-bottom:4px!important}
+.config-section-main-title{font-size:16px;font-weight:800;color:#101828;letter-spacing:.01em}
+.config-subsection{border-top:0!important;padding-top:4px!important}
+.config-section-title{margin-bottom:6px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#667085}
+.config-section-toggle{cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none;margin-bottom:0}
+.config-section-toggle:hover{color:#344054}
+.config-collapse-icon{margin-left:auto;flex:none;font-size:14px;line-height:1;color:#667085;display:inline-block;font-style:normal;transform:rotate(180deg)}
+.config-collapsible.collapsed .config-collapse-icon{transform:rotate(0deg)}
+.config-section-summary{font-weight:500;color:#344054;letter-spacing:0;text-transform:none;font-size:10px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.config-collapsible .config-collapsible-content{margin-top:6px}
+.config-collapsible.collapsed .config-section-title{margin-bottom:0}
+.config-collapsible.collapsed .config-collapsible-content{display:none!important}
 .config-general-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
 .config-general-grid input{width:100%}
 .config-inventory-row{margin-top:7px!important;padding:6px 8px!important}
@@ -472,7 +522,7 @@ html,body{max-width:100%;overflow-x:hidden}
 .rarity-counts input{width:100%;height:28px!important;min-height:28px!important;padding:3px 5px!important}
 .color-top-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
 .color-top-grid select{width:100%}
-.priority-compact{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:7px}
+.priority-compact{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:7px}
 .priority-compact label{display:flex;align-items:center;gap:3px;font-size:10px}
 .priority-compact select{min-width:0;width:100%;padding:5px!important}
 .deck-config-card #manual{margin-top:7px!important}
@@ -532,6 +582,7 @@ html,body{max-width:100%;overflow-x:hidden}
 
 /* v91 safe alignment: keep required DOM nodes, only hide subtitle visually */
 #tSub{display:none!important}
+#tConfig{display:none!important}
 .deck-config-card,#decks>.card{
   width:100%;
   max-width:920px!important;
@@ -639,15 +690,10 @@ html,body{max-width:100%;overflow-x:hidden}
 .app-section-nav-placeholder.active{display:block}
 
 /* v107 UX polish */
-.app-section-nav.nav-floating{padding:5px!important;gap:3px!important}
-.app-section-nav.nav-floating .section-nav-btn{padding:6px 7px!important;font-size:10px!important}
-.app-section-nav.nav-floating .nav-label{display:none}
-.app-section-nav.nav-floating .nav-icon{font-size:16px}
-@media(max-width:560px){
-  .app-section-nav .nav-label{display:none}
-  .app-section-nav .nav-icon{font-size:15px}
-  .section-nav-btn{padding:7px 6px!important}
-}
+.app-section-nav.nav-floating{padding:5px!important;gap:4px!important;max-width:none!important}
+.app-section-nav.nav-floating .section-nav-btn{padding:6px 10px!important;font-size:11px!important;gap:4px!important}
+.app-section-nav.nav-floating .nav-icon{font-size:14px}
+.app-section-nav.nav-floating .nav-label{font-size:10px}
 .config-primary-actions #tGenerate{min-height:38px!important;font-size:12px!important;box-shadow:0 2px 5px rgba(31,78,120,.18)}
 .config-primary-actions #tReroll{opacity:.88}
 .seed-section .seed-row button{padding:5px 7px!important;min-height:27px!important;font-size:9px!important}
@@ -800,6 +846,7 @@ body.has-sticky-bar .wrap{padding-bottom:64px}
 .custom-slot-num{color:#d0d5dd!important}
 .custom-slot-label{color:#98a2b3}
 .custom-remove-btn{background:#b42318!important;padding:4px 6px;font-size:10px}
+.custom-clear-btn{background:#b42318!important;color:#fff!important}
 .custom-add-btn{background:#1f4e78;padding:4px 8px;font-size:10px}
 /* Add-card drawer search results */
 .custom-search-row{display:flex;align-items:center;gap:6px;padding:7px 12px;border-bottom:1px solid #eaecf0;font-size:13px}
@@ -826,17 +873,184 @@ body.has-sticky-bar .wrap{padding-bottom:64px}
 .custom-deck-config-hint{margin:0 0 8px;padding:6px 9px;background:#f9fafb;border:1px solid #e4e7ec;border-radius:7px;font-size:10px;color:#667085;line-height:1.4}
 @media(max-width:520px){.msc-bar{gap:5px}.msc-code{font-size:10px}.msc-import-input{min-width:120px}}
 
-/* Custom mode: hide seed + generate actions and sticky bar */
+/* Custom mode: config card accent */
+body.custom-mode .deck-config-card{border-left:4px solid #7c3aed}
+
+/* Custom mode: hide seed + generate actions + deck count */
 body.custom-mode .seed-section,
 body.custom-mode .config-primary-actions,
 body.custom-mode .toolbar.deck-actions,
-body.custom-mode #stickyActions{display:none!important}
+body.custom-mode #stickyActions,
+body.custom-mode .custom-mode-hide{display:none!important}
+
+/* custom-mode applied inline in <body> script to avoid flash on restore */
 
 /* Nav badge */
 .nav-badge{display:none;min-width:16px;height:16px;padding:0 4px;background:#1f4e78;color:#fff;border-radius:999px;font-size:9px;font-weight:800;line-height:16px;text-align:center;margin-left:3px;flex:none}
 .section-nav-btn.active .nav-badge{background:rgba(255,255,255,.25);color:#fff}
 
+/* Custom deck config hint banner */
+.custom-deck-config-hint{display:flex;align-items:center;gap:7px;padding:7px 10px;margin:6px 0 8px;background:#eff8ff;border:1px solid #b2ddff;border-radius:8px;font-size:11px;color:#1e4e78;cursor:pointer;line-height:1.35}
+.custom-deck-config-hint:hover{background:#dbeafe;border-color:#93c5fd}
+.custom-deck-config-hint-icon{flex:none;font-size:13px}
+.custom-deck-config-hint span:nth-child(2){flex:1;min-width:0}
+.custom-deck-config-hint-link{flex:none;font-weight:700;white-space:nowrap;color:#1f4e78}
+
 /* Custom sticky bar */
 .sticky-custom{z-index:74}
 .sticky-custom .sticky-generate{font-size:11px}
 .sticky-custom .sticky-reroll{font-size:11px;padding:7px 12px}
+
+/* ── Design polish ────────────────────────────────────── */
+
+/* 1. Seed section: visually lighter than the main config sections */
+.seed-section .config-section-title{color:#98a2b3}
+.seed-section{opacity:.85}
+.seed-section:focus-within{opacity:1;transition:opacity .15s}
+
+/* 2. Custom deck: distinct accent (purple-toned left border + subtle header tint) */
+#customDeckSection>.card{border-left:4px solid #7c3aed}
+#customDeckSection .deck-header-row{background:linear-gradient(to right,#faf5ff,#fff);margin:-14px -16px 10px;padding:12px 16px;border-radius:12px 12px 0 0;border-bottom:1px solid #ede9fe}
+#customDeckSection .deck-header-row h2 .deck-title-input{color:#101828}
+
+/* 3. Drawer overlay: gradual fade — handled in base rules above */
+
+/* 4. Card row color backgrounds: subtle tint */
+tr.White td{background:rgba(212,199,163,.06)}
+tr.Blue td{background:rgba(75,132,196,.06)}
+tr.Black td{background:rgba(51,51,51,.05)}
+tr.Red td{background:rgba(195,75,66,.06)}
+tr.Green td{background:rgba(75,139,87,.06)}
+tr.White:hover td{background:rgba(212,199,163,.14)}
+tr.Blue:hover td{background:rgba(75,132,196,.14)}
+tr.Black:hover td{background:rgba(51,51,51,.1)}
+tr.Red:hover td{background:rgba(195,75,66,.12)}
+tr.Green:hover td{background:rgba(75,139,87,.12)}
+
+/* 5. Deck summary: valid state more celebratory */
+.deck-summary-status.valid{
+  background:linear-gradient(135deg,#d1fae5,#ecfdf3);
+  color:#065f46;
+  font-size:13px;
+  padding:6px 10px;
+  box-shadow:0 1px 3px rgba(6,95,70,.1);
+}
+.deck-summary-status.invalid{font-size:12px}
+
+/* 6. Deck header actions: Save button stands out */
+.save-deck-btn{
+  background:#1f4e78!important;
+  font-weight:800!important;
+  box-shadow:0 2px 5px rgba(31,78,120,.2);
+}
+.save-deck-btn:hover{filter:brightness(1.08)}
+.deck-json-btn{opacity:.82}
+.deck-json-btn:hover{opacity:1}
+
+/* 7. font-weight: use 600/700 only */
+button{font-weight:700}
+.config-section-title{font-weight:700!important}
+.section-nav-btn{font-weight:600}
+
+/* 8. MSC bar: more visual separation from summary */
+.msc-bar{margin-top:10px}
+
+/* 9. History empty state */
+.history-empty-state{
+  display:flex;flex-direction:column;align-items:center;
+  padding:32px 16px;color:#98a2b3;text-align:center;gap:8px;
+}
+.history-empty-state .empty-icon{font-size:36px;line-height:1;opacity:.5}
+.history-empty-state p{margin:0;font-size:13px;line-height:1.5}
+
+/* ── Additional UX polish ─────────────────────────────── */
+
+/* 1. Inline confirm modal — fade in */
+.custom-confirm-overlay{position:fixed;inset:0;background:#0006;z-index:600;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeOverlay .15s ease}
+.custom-confirm-box{background:#fff;border-radius:14px;padding:20px;width:min(360px,92vw);box-shadow:0 16px 48px #0004;animation:scaleIn .15s ease}
+.custom-confirm-msg{margin:0 0 16px;font-size:14px;line-height:1.5;color:#101828}
+.custom-confirm-actions{display:flex;gap:8px;justify-content:flex-end}
+.custom-confirm-cancel{min-width:80px}
+.custom-confirm-ok{min-width:80px;background:#b42318}
+@keyframes fadeOverlay{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+
+/* 2. Custom clear button */
+
+/* 3. Empty state custom deck */
+.custom-empty-state{padding:24px 16px;text-align:center;color:#667085}
+.custom-empty-icon{font-size:32px;line-height:1;opacity:.4;margin-bottom:8px}
+.custom-empty-title{font-size:14px;font-weight:700;color:#344054;margin:0 0 4px}
+.custom-empty-sub{margin:0 0 14px}
+.custom-empty-options{display:flex;flex-direction:column;gap:8px;max-width:320px;margin:0 auto;text-align:left}
+.custom-empty-option{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;background:#f9fafb;border:1px solid #e4e7ec;border-radius:8px;font-size:12px;line-height:1.4}
+.custom-empty-option span:first-child{font-weight:800;color:#1f4e78;flex:none;min-width:28px;text-align:center}
+
+/* 3b. Focus rings — consistent across all interactive elements */
+:focus-visible{outline:2px solid #1f4e78;outline-offset:2px;border-radius:4px}
+button:focus-visible{outline:2px solid #1f4e78;outline-offset:2px}
+input:focus-visible,select:focus-visible{outline:2px solid #1f4e78;outline-offset:1px}
+.section-nav-btn:focus-visible{outline:2px solid #fff;outline-offset:-3px}
+.section-nav-btn.active:focus-visible{outline:2px solid rgba(255,255,255,.6);outline-offset:-3px}
+
+/* 4. Tap targets: sortable headers min-height */
+th.sortable{min-height:44px;height:44px}
+
+/* 5. Toast: pointer cursor to hint it's tappable */
+.app-toast.show{cursor:pointer}
+
+/* 6. Grid mobile: icon only at ≤480px */
+@media(max-width:480px){
+  .grid .stat{font-size:9px;padding:5px 2px}
+  .grid .stat b{font-size:13px;display:block;margin-top:1px}
+}
+
+/* 7. Title mobile */
+@media(max-width:480px){
+  h1{font-size:18px!important;line-height:1.2}
+}
+
+
+/* Help button */
+.help-btn{width:32px;height:32px;padding:0!important;border-radius:50%!important;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+
+/* How to use overlay — fade like drawerOverlay */
+.how-to-use-overlay{position:fixed;inset:0;background:#0006;z-index:530;visibility:hidden;pointer-events:none;opacity:0;transition:opacity .22s ease,visibility .22s ease;display:flex;align-items:center;justify-content:center;padding:20px}
+.how-to-use-overlay.open{visibility:visible;pointer-events:auto;opacity:1}
+
+/* How to use modal */
+.how-to-use-modal{background:#fff;border-radius:14px;width:min(640px,96vw);max-height:82vh;display:flex;flex-direction:column;box-shadow:0 16px 50px #0004;overflow:hidden}
+.how-to-use-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #e4e7ec;flex:none}
+.how-to-use-header h2{margin:0;font-size:17px}
+.how-to-use-tabs{display:flex;gap:4px;padding:10px 14px 0;border-bottom:1px solid #e4e7ec;flex:none;flex-wrap:wrap}
+.how-to-use-tab{display:flex;align-items:center;gap:5px;padding:6px 11px;border:0;border-radius:8px 8px 0 0;background:transparent;color:#667085;font-size:11px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.how-to-use-tab:hover{background:#f2f4f7;color:#344054}
+.how-to-use-tab.active{background:#fff;color:#1f4e78;border-bottom:2px solid #1f4e78;font-weight:700}
+.how-to-use-body{padding:18px;overflow-y:auto;flex:1;font-size:13px;line-height:1.6}
+.how-to-use-body h3{margin:0 0 10px;font-size:15px;color:#101828}
+.how-to-use-body h4{margin:14px 0 5px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#667085}
+.how-to-use-body ul{padding-left:18px;margin:5px 0 10px}
+.how-to-use-body li{margin:4px 0}
+.how-to-use-body p{margin:0 0 8px}
+.how-to-use-body code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f2f4f7;padding:1px 5px;border-radius:4px;font-size:11px}
+@media(max-width:560px){
+  .how-to-use-tabs{gap:2px;padding:8px 10px 0}
+  .how-to-use-tab{padding:5px 8px;font-size:10px}
+  .how-to-use-body{padding:14px}
+}
+
+/* Chip completo en detalle (sin truncar) */
+.history-code-chip-full{white-space:normal!important;word-break:break-all;border-radius:8px!important}
+
+/* Swap modal: mayor contraste disponible/no-disponible */
+.swap-option{border-left:3px solid transparent;transition:border-color .1s}
+.swap-option:not(.unavailable){border-left-color:#abefc6}
+.swap-option.unavailable{opacity:.45;background:#fafafa;border-left-color:#fecdca}
+.swap-option .availability{font-size:11px;font-weight:700;margin-left:6px;padding:2px 7px;border-radius:999px}
+.swap-option:not(.unavailable) .availability{background:#ecfdf3;color:#027a48;border:1px solid #abefc6}
+.swap-option.unavailable .availability,.swap-option .availability.zero{background:#fef3f2;color:#b42318;border:1px solid #fecdca}
+
+/* Borde violeta custom deck en mobile */
+@media(max-width:760px){
+  #customDeckSection>.card{border-left:4px solid #7c3aed!important}
+}

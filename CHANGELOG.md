@@ -1,5 +1,81 @@
 # Changelog
 
+## 2.2.0 — Design & UX Polish, Generator Improvements
+
+### New features
+
+**How to Use modal (`js/howToUse.js`)**
+- `?` button in header (next to lang picker) opens a modal with 5 bilingual tabs: Generator, Custom Deck, Collection, History, MSC Code
+- Fade-in via `visibility`+`opacity` transition
+
+**Configuration accordion**
+- Rarities and Colors sections are now collapsible accordions with `⌄` icon
+- Summary shown in collapsed title: `23C · 14U · 6R · 2M` for Rarities; `Auto · 5 colors` / priority order for Colors
+- Default open on first visit; remembers state per section independently
+- Settings header promoted to prominent title (16px bold)
+- "Deck/Mazo" subsection added below Settings
+
+**Deck color accents**
+- Each generated deck gets a unique left border color cycling through 10 colors (amber, orange, pink, teal, brown, fuchsia, lime, cyan, ochre, crimson)
+- Header row shows a matching gradient background
+- Custom Deck has a distinct violet `#7c3aed` accent on both the deck card and the config card (in custom-mode)
+
+**Generator without inventory**
+- When `respectInventory` is off, each deck draws independently from the full card pool (no shared `used` map)
+- Maximum simultaneous decks reduced to 10; `deckCountHelp` explains the new behavior
+
+**MSC in generated decks**
+- MSC bar added below each generated deck's summary, with a safe copy button (no inline JS)
+- MSC shown in history list and detail for all entry types (generated + custom), as copiable chips
+
+**Custom Deck improvements**
+- Hint banner (blue, clickable) replaces the small grey text — shows C/U/R/M breakdown and scrolls to Configuration on click
+- Action buttons expanded: Export JSON, Import JSON, and Clear are now individual buttons (no dropdown)
+- `⚡ Use generator` always generates a fresh seed; confirms before replacing existing cards
+- Import MSC inline panel with real-time validation; warns if composition doesn't match rarity config
+- Deck sorted on load/import: C→U→R→M → number → color
+
+**History improvements**
+- Seed + all MSC codes shown in list view as copiable chips (max 2 rows height)
+- Seed + all MSC codes shown in detail view as full copiable chips
+- Cards not found in current pool filtered from missing-card calculations (no `#undefined` entries)
+- Delete confirmation uses inline modal (no `confirm()`)
+
+### Improvements
+
+- `mode` select option renamed: "Free colors" → "Random colors" (both languages)
+- `preset` "5 colors balanced / with priority" now also populates the manual distribution table
+- "Colores ordenados por prioridad" correctly hides when "No fixed priority" is selected
+- Nav consolidated from 5 to 4 buttons: Generator + Decks merged into "Deck Generator"
+- Nav floating bar shows labels (not icons-only) — font scaled to fit 4 buttons
+- `customDeckSection` restores at page top (same as Generator) on section restore
+- Section state persists only for page sections (generator, customdeck); drawers (collection, history) are always closed on load
+- `maxCopies` input capped at `max=9` (aligned with MSC v2 encoder limit)
+
+### Bug fixes
+
+- **XSS** — seed and MSC values in history chips and deck MSC bar now use `data-*` attributes + event delegation instead of inline `onclick` with interpolated values
+- **`hasVisited` collapse bug** — each collapsible section now checks its own storage key independently; one section's state no longer affected the other
+- **`#undefined` in history issues** — missing-card list filters out card numbers not found in the current pool
+- **`priority-compact` always visible** — `display:grid!important` in CSS was overriding JS `display:none`; removed `!important`
+- **Overflow fade on drawers** — `drawer-overlay` and `how-to-use-overlay` now use `visibility`+`opacity`+`transition` for real fade (previously `display:none/block` skipped the animation)
+- **Custom deck name listener stacking** — name change handler and dropdown close listener moved to global delegation (registered once), not inside `renderCustomDeck()`
+- **`historyDrawer` outside `.wrap`** — moved inside `.wrap` for consistent CSS scoping
+- **Deck summary chip inconsistency** — generated decks now show `X/Y` format matching custom deck
+
+### Removed
+
+- Dropdown `⋯` menu in Custom Deck header — replaced with individual buttons
+- Dead CSS: `.custom-more-menu`, `.custom-more-dropdown`, `.custom-more-danger` and related rules
+
+### Compatibility
+- New `localStorage` keys: `msCustomDeckV1`, `msSection`
+- `msConfigV3` gains `customDeckSort`, `configSectionRarities_open`, `configSectionColors_open` (ignored by older versions)
+- All existing keys unchanged
+- No new dependencies, no build step
+
+---
+
 ## 2.1.0 — Custom Deck Editor, MSC Codes, UX Polish
 
 ### New features

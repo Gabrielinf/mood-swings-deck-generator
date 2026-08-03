@@ -5,8 +5,69 @@ document.addEventListener("click",e=>{let p=document.querySelector(".lang-picker
 
 
 
+function toggleConfigSection(id){
+  const sec=document.getElementById(id);if(!sec)return;
+  const icon=sec.querySelector(".config-collapse-icon");
+  const contents=sec.querySelectorAll(".config-collapsible-content");
+  const isCollapsed=sec.classList.contains("collapsed");
+  if(isCollapsed){
+    sec.classList.remove("collapsed");
+
+    // Restore each element to its saved pre-collapse display
+    contents.forEach(el=>{
+      const saved=el.dataset.collapsedPrev;
+      if(saved!==undefined){el.style.display=saved;delete el.dataset.collapsedPrev;}
+    });
+    // Re-apply mode-specific visibility so priority/manual stay correct
+    if(id==="configSectionColors"){
+      const v=document.getElementById("mode")?.value;
+      document.getElementById("manual").style.display=v==="manual"?"block":"none";
+      document.getElementById("priorityControls").style.display=(v==="balanced"&&document.getElementById("priorityMode")?.value==="fixed")?"flex":"none";
+    }
+  }else{
+    sec.classList.add("collapsed");
+    // Save current display value for every collapsible child, then hide
+    contents.forEach(el=>{
+      el.dataset.collapsedPrev=el.style.display;
+      el.style.display="none";
+    });
+  }
+  const cfg=Storage.loadConfig();
+  cfg[id+"_open"]=isCollapsed;
+  Storage.saveConfig(cfg);
+  updateConfigSectionSummaries();
+}
+
+function updateConfigSectionSummaries(){
+  const es=language==="es";
+  const rSec=document.getElementById("configSectionRarities");
+  const rs=document.getElementById("raritiesSummary");
+  if(rs) rs.textContent=rSec?.classList.contains("collapsed")
+    ?`${+nC.value}C · ${+nU.value}U · ${+nR.value}R · ${+nM.value}M`:"";
+  const cSec=document.getElementById("configSectionColors");
+  const cs=document.getElementById("colorsSummary");
+  if(cs&&cSec?.classList.contains("collapsed")){
+    const modeVal=mode?.value||"balanced";
+    const modeMap={balanced:es?"Auto":"Auto",free:es?"Libres":"Free",manual:es?"Manual":"Manual"};
+    let summary=modeMap[modeVal]||"";
+    if(modeVal==="balanced"){
+      // Show priority if fixed, otherwise "5 colors"
+      const pm=document.getElementById("priorityMode")?.value;
+      if(pm==="fixed"){
+        const prios=["prio1","prio2","prio3","prio4","prio5"].map(id=>colorIcon(document.getElementById(id)?.value||"")).join("");
+        summary+=` · ${prios}`;
+      }else{summary+=es?" · 5 colores":" · 5 colors";}
+    }else if(modeVal==="manual"){
+      // Show which colors have quota > 0 for first rarity
+      const active=colors.filter(c=>colors.some(()=>+document.getElementById(`qC${c}`)?.value>0||+document.getElementById(`qU${c}`)?.value>0||+document.getElementById(`qR${c}`)?.value>0||+document.getElementById(`qM${c}`)?.value>0));
+      summary+=` · ${active.map(c=>colorIcon(c)).join("")}`;
+    }
+    cs.textContent=summary;
+  }else if(cs){cs.textContent="";}
+}
+
 function setup(){
-["nC","nU","nR","nM"].forEach(id=>document.getElementById(id).addEventListener("change",()=>{syncDeckSizeFromRarities()}));["prio1","prio2","prio3","prio4","prio5"].forEach((id,i)=>{let e=document.getElementById(id);e.onchange=()=>enforceUniquePriority(e);e.innerHTML=colors.map(c=>`<option value="${c}">${colorOptionText(c)}</option>`).join("");e.value=colors[i]});rarities.forEach(r=>{document.getElementById("manualBody").innerHTML+=`<tr><th>${r}</th>${colors.map(c=>`<td><input id="q${r}${c}" type=number min=0 value=0></td>`).join("")}</tr>`});document.getElementById("mode").onchange=()=>{const v=document.getElementById("mode").value;document.getElementById("manual").style.display=v==="manual"?"block":"none";document.getElementById("priorityControls").style.display=(v==="balanced"&&document.getElementById("priorityMode").value==="fixed")?"flex":"none";updateDeckCountHelp();};loadConfig();setLang(language)}
+["nC","nU","nR","nM"].forEach(id=>document.getElementById(id).addEventListener("change",()=>{syncDeckSizeFromRarities()}));["prio1","prio2","prio3","prio4","prio5"].forEach((id,i)=>{let e=document.getElementById(id);e.onchange=()=>enforceUniquePriority(e);e.innerHTML=colors.map(c=>`<option value="${c}">${colorOptionText(c)}</option>`).join("");e.value=colors[i]});rarities.forEach(r=>{document.getElementById("manualBody").innerHTML+=`<tr><th>${r}</th>${colors.map(c=>`<td><input id="q${r}${c}" type=number min=0 value=0></td>`).join("")}</tr>`});document.getElementById("mode").onchange=()=>{const v=document.getElementById("mode").value;const colorsCollapsed=document.getElementById("configSectionColors")?.classList.contains("collapsed");document.getElementById("manual").style.display=(!colorsCollapsed&&v==="manual")?"block":"none";document.getElementById("priorityControls").style.display=(!colorsCollapsed&&v==="balanced"&&document.getElementById("priorityMode").value==="fixed")?"flex":"none";updateDeckCountHelp();};loadConfig();setLang(language)}
 function setLang(v){language=v;document.documentElement.lang=v;Storage.saveLanguage(v);
 let lb=document.getElementById("langButton");if(lb)lb.innerHTML=v==="es"?'<span class="flag-svg flag-es"></span><span>Español</span>':'<span class="flag-svg flag-gb"></span><span>English</span>';document.documentElement.lang=v;for(const [id,k] of [["tTitle","title"],["tSub","sub"],["tConfig","config"],["tDeckSize","deckSize"],["tRatioPreset","ratioPreset"],["tC","C"],["tU","U"],["tR","R"],["tM","M"],["tCopies","copies"],["tDecks","decks"],["tMode","mode"],["tPreset","preset"],["tInventory","inventory"],["tInventoryHelp","inventoryHelp"],["tPriorityMode","priorityMode"],["tManual","manual"],["tGenerate","generate"],["tReroll","reroll"],["generateHelp","generateHelp"]])document.getElementById(id).textContent=T(k);mode.options[0].text=T("balancedAuto");mode.options[1].text=T("freeColor");mode.options[2].text=T("manualDistribution");priorityMode.options[0].text=T("randomPriority");priorityMode.options[1].text=T("fixedPriority");
 ratioPreset.options[0].text=T("ratioBase");ratioPreset.options[1].text=T("ratioCommon");ratioPreset.options[2].text=T("ratioBalanced");ratioPreset.options[3].text=T("ratioRare");ratioPreset.options[4].text=T("ratioCustom");
@@ -29,23 +90,27 @@ function syncDeckSizeFromRarities(){
   ratioPreset.value="custom";
   customRatio=normalizeRatio(needs());
   if(mode.value==="manual"&&preset.value)syncManualToRarityCounts();
-  renderCustomDeck();
+  renderCustomDeck();updateConfigSectionSummaries();
 }
 function syncRaritiesToDeckSize(){
   let total=Math.max(1,+deckSize.value||45);
   let vals=allocateByRatio(total,activeRatio());
   nC.value=vals.C;nU.value=vals.U;nR.value=vals.R;nM.value=vals.M;
   if(mode.value==="manual"&&preset.value)syncManualToRarityCounts();
-  renderCustomDeck();
+  renderCustomDeck();updateConfigSectionSummaries();
 }
 function applyPreset(v){
   if(!v)return;
-  if(v==="standard"){mode.value="balanced";priorityMode.value="random";updatePriorityUI();}
-  else if(v==="priority"){mode.value="balanced";priorityMode.value="fixed";updatePriorityUI();}
+  if(v==="standard"){mode.value="balanced";priorityMode.value="random";updatePriorityUI();setPresetManual(5);showManualTable();}
+  else if(v==="priority"){mode.value="balanced";priorityMode.value="fixed";updatePriorityUI();setPresetManual(5);showManualTable();}
   else if(v==="twoColor"){mode.value="manual";setPresetManual(2);}
   else if(v==="threeColor"){mode.value="manual";setPresetManual(3);}
   else if(v==="manual"){mode.value="manual";}
   mode.onchange();
+}
+function showManualTable(){
+  const colorsCollapsed=document.getElementById("configSectionColors")?.classList.contains("collapsed");
+  if(!colorsCollapsed)document.getElementById("manual").style.display="block";
 }
 function setPresetManual(k){
   let active=getPriority().slice(0,k), ns=needs();
@@ -81,7 +146,10 @@ function enforceUniquePriority(changed){
 function initPriorityPrevious(){["prio1","prio2","prio3","prio4","prio5"].forEach(id=>{let e=document.getElementById(id);e.dataset.prev=e.value})}
 
 function getPriority(){let a=[prio1.value,prio2.value,prio3.value,prio4.value,prio5.value];if(new Set(a).size!==5)throw Error(language==="es"?"Cada color debe aparecer una sola vez en la prioridad.":"Each color must appear exactly once in the priority.");return a}
-function updatePriorityUI(){priorityControls.style.display=priorityMode.value==="fixed"?"flex":"none"}
+function updatePriorityUI(){
+  const colorsCollapsed=document.getElementById("configSectionColors")?.classList.contains("collapsed");
+  priorityControls.style.display=(!colorsCollapsed&&priorityMode.value==="fixed")?"flex":"none";
+}
 function newSeed(){
   let el=document.getElementById("seedInput");
   if(el)el.value=createSeed();
@@ -147,10 +215,15 @@ function updateStickyBar(){
   onScroll();
 })();
 function showToast(message,type="ok"){
- const el=document.getElementById("appToast");if(!el)return;
- el.textContent=message;el.className=`app-toast show ${type}`;
- clearTimeout(appToastTimer);appToastTimer=setTimeout(()=>el.className="app-toast",2200);
+  const el=document.getElementById("appToast");if(!el)return;
+  el.textContent=message;el.className=`app-toast show ${type}`;
+  clearTimeout(appToastTimer);
+  appToastTimer=setTimeout(()=>el.className="app-toast",3500);
 }
+(function initToastDismiss(){
+  const el=document.getElementById("appToast");if(!el)return;
+  el.addEventListener("click",()=>{clearTimeout(appToastTimer);el.className="app-toast";});
+})();
 function setSeedStatus(msg){
   let el=document.getElementById("seedStatus");
   if(el)el.textContent=msg;
@@ -277,11 +350,18 @@ function updateDeckCountHelp(){
     }
   }else{
     const inp=document.getElementById("deckCount");
-    if(inp)inp.max=20;
-    e.textContent="";
+    if(inp){inp.max=10;if(+inp.value>10)inp.value=10;}
+    const es=language==="es";
+    e.textContent=es
+      ?"Cada mazo puede reutilizar cualquier carta. Máximo: 10 mazos."
+      :"Each deck can reuse any card. Maximum: 10 decks.";
     e.style.color="";
   }
-  document.querySelectorAll(".config-section-title").forEach(x=>x.textContent=language==="es"?x.dataset.es:x.dataset.en);
+  document.querySelectorAll(".config-section-main-title,.config-section-title").forEach(x=>{
+    const lbl=x.querySelector(".config-section-label");
+    if(lbl)lbl.textContent=language==="es"?x.dataset.es:x.dataset.en;
+    else x.textContent=language==="es"?x.dataset.es:x.dataset.en;
+  });
 }
 function readGeneratorConfig(){
   const es=language==="es";
@@ -358,9 +438,17 @@ function cycleSort(tableId,col){
   else if(tableId.startsWith("history-") && activeHistoryIndex!==null){showHistoryEntry(activeHistoryIndex);}
   else render();
 }
+const _baseRarityOrder={C:0,U:1,R:2,M:3};
+function _baseSort(rows){
+  return [...rows].sort((a,b)=>
+    (_baseRarityOrder[a.rarity]-_baseRarityOrder[b.rarity])||
+    a.n-b.n||
+    a.color.localeCompare(b.color)
+  );
+}
 function sortedRows(rows,tableId){
   let st=sortState[tableId];
-  if(!st||st.dir==="base"||!st.col) return [...rows];
+  if(!st||st.dir==="base"||!st.col) return _baseSort(rows);
   let a=[...rows], col=st.col, mul=st.dir==="asc"?1:-1;
   a.sort((x,y)=>{
     let xv=x[col], yv=y[col];
@@ -439,6 +527,18 @@ function replaceDeckCard(newNumber){
 
 
 
+function deckMscBarHtml(d,i){
+  let code="";
+  try{code=MSC.encode(d);}catch(e){}
+  if(!code)return"";
+  const enc=v=>v.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+  return`<div class="msc-bar">
+    <span class="msc-label">MSC</span>
+    <span class="msc-code">${enc(code)}</span>
+    <button type="button" class="msc-btn deck-msc-copy-btn" data-msc="${enc(code)}">${T("mscCopy")}</button>
+  </div>`;
+}
+
 function deckSummaryHtml(d){
  let rc={C:0,U:0,R:0,M:0},cc={White:0,Blue:0,Black:0,Red:0,Green:0};
  d.forEach(x=>{if(rc[x.rarity]!==undefined)rc[x.rarity]++;if(cc[x.color]!==undefined)cc[x.color]++});
@@ -451,8 +551,8 @@ function deckSummaryHtml(d){
  let valid=!errors.length;
  return `<div class="deck-summary">
  <span class="deck-summary-status ${valid?"valid":"invalid"}">${valid?(language==="es"?"✓ Mazo válido":"✓ Valid deck"):(language==="es"?"⚠ Revisar mazo":"⚠ Check deck")}</span>
- <span class="deck-summary-chip"><b>${d.length}</b> ${T("cardsWord")}</span>
- <span class="deck-summary-chip">C ${rc.C} · U ${rc.U} · R ${rc.R} · M ${rc.M}</span>
+ <span class="deck-summary-chip"><b>${d.length}</b> / ${expected} ${T("cardsWord")}</span>
+ <span class="deck-summary-chip">C ${rc.C}/${target.C} · U ${rc.U}/${target.U} · R ${rc.R}/${target.R} · M ${rc.M}/${target.M}</span>
  <span class="deck-summary-chip">⚪ ${cc.White}</span><span class="deck-summary-chip">🔵 ${cc.Blue}</span><span class="deck-summary-chip">⚫ ${cc.Black}</span><span class="deck-summary-chip">🔴 ${cc.Red}</span><span class="deck-summary-chip">🟢 ${cc.Green}</span>
  <ul class="deck-summary-errors">${errors.map(e=>`<li>${e}</li>`).join("")}</ul></div>`;
 }
@@ -496,8 +596,10 @@ function render(){
         `<td><button class="change-btn deck-swap-btn" data-deck="${i}" data-card="${x.n}">↔ ${T("changeCard")}</button></td>`+
         `</tr>`;
     }).join("");
-    return `<div class=card>`+
-      `<div class="deck-header-row">`+
+    const _deckColors=["#eab308","#ea580c","#ec4899","#0d9488","#92400e","#c026d3","#84cc16","#06b6d4","#a16207","#9d174d"];
+    const _dc=_deckColors[i%_deckColors.length];
+    return `<div class=card style="border-left:4px solid ${_dc}">`+
+      `<div class="deck-header-row" style="background:linear-gradient(to right,${_dc}18,#fff);margin:-14px -16px 10px;padding:12px 16px;border-radius:12px 12px 0 0;border-bottom:1px solid ${_dc}33">`+
         `<h2><input class="deck-title-input deck-name-input" data-deck="${i}" value="${name}"> `+
         `<span class="small">— ${d.length} / ${deckSize.value} ${T("cardsWord")}</span></h2>`+
         `<div class="deck-header-actions">`+
@@ -507,7 +609,7 @@ function render(){
         `</div>`+
       `</div>`+
       `<div class=grid>${colors.map(c=>`<div class="stat ${c}">${label(c)}<br><b>${d.filter(x=>x.color===c).length}</b></div>`).join("")}</div>`+
-      deckSummaryHtml(d)+deckCollectionStatusHtml(d)+
+      deckSummaryHtml(d)+deckCollectionStatusHtml(d)+deckMscBarHtml(d,i)+
       `<div class="table-scroll"><table>`+
         `<tr><th>🔒</th>${sortableHeader("deck"+i,"n","#")}${sortableHeader("deck"+i,"name",T("card"))}${sortableHeader("deck"+i,"color",T("color"))}${sortableHeader("deck"+i,"rarity",T("rarity"))}<th>${T("changeCard")}</th></tr>`+
         rows+
@@ -520,6 +622,16 @@ document.addEventListener("change",e=>{
   if(cb){locks[`${cb.dataset.deck}-${cb.dataset.card}`]=cb.checked;}
 });
 document.addEventListener("click",e=>{
+  const mscCopy=e.target.closest(".deck-msc-copy-btn");
+  if(mscCopy){
+    const code=mscCopy.dataset.msc||"";
+    (async()=>{
+      try{await navigator.clipboard.writeText(code);}
+      catch(err){const t=document.createElement("textarea");t.value=code;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();}
+      showToast(T("mscCopied"));
+    })();
+    return;
+  }
   const swap=e.target.closest(".deck-swap-btn");
   if(swap){openSwapModal(+swap.dataset.deck,+swap.dataset.card);return;}
   const save=e.target.closest(".deck-save-btn");
@@ -614,6 +726,12 @@ function loadConfig(){
   if(ratioPreset.value==="custom")customRatio=normalizeRatio(needs());
   if(o.customDeckSort){try{sortState["customdeck"]=JSON.parse(o.customDeckSort);}catch(e){}}
   mode.onchange();updatePriorityUI();
+  // Collapsible sections: open by default on first visit, respect saved state after that
+  ["configSectionRarities","configSectionColors"].forEach(id=>{
+    const everSet=o[id+"_open"]!==undefined;
+    const shouldCollapse=everSet&&o[id+"_open"]!==true;
+    if(shouldCollapse)toggleConfigSection(id);
+  });
   // Clamp deckCount to what the collection actually supports on load.
   if(respectInv.checked){
     const maxD=maxDecksFromCollection();
@@ -621,20 +739,17 @@ function loadConfig(){
     if(inp&&+inp.value>maxD)inp.value=1;
   }
 }
-setup();initPriorityPrevious();updatePriorityUI();initConfigAutosave();generate();renderCustomDeck();
+setup();initPriorityPrevious();updatePriorityUI();initConfigAutosave();generate();renderCustomDeck();updateConfigSectionSummaries();
 (function restoreSection(){
   const s=Storage.loadSection();
   if(!s||s==="generator")return;
-  if(s==="collection"){openCollection();return;}
-  if(s==="history"){openHistory();return;}
-  if(s==="decks"||s==="customdeck"){
-    const isCustom=s==="customdeck";
+  if(s==="customdeck"){
+    const isCustom=true;
     document.getElementById("decks").style.display=isCustom?"none":"";
     document.getElementById("customDeckSection").style.display=isCustom?"":"none";
     document.body.classList.toggle("custom-mode",isCustom);
     setStructuralActive(s);
-    const id=s==="decks"?"section-decks":"section-customdeck";
-    setTimeout(()=>document.getElementById(id)?.scrollIntoView({behavior:"instant",block:"start"}),0);
+    setTimeout(()=>document.getElementById("section-generator")?.scrollIntoView({behavior:"instant",block:"start"}),0);
   }
 })();
 

@@ -59,8 +59,11 @@ const Generator = {
   generate(config, cardPool, excludedSet, locksMap) {
     const es = config.lang === "es";
     const rng = makeSeededRng(config.seed);
+    // used tracks copies across decks only when respecting inventory.
+    // Without inventory, each deck draws independently from the full pool.
     const used = {};
     const result = [];
+    const trackUsed = config.respectInventory;
 
     for (let d = 0; d < config.count; d++) {
       const out = [];
@@ -81,13 +84,13 @@ const Generator = {
             const limit = config.respectInventory
               ? Math.max(0, +x.qty || 0)
               : Math.max(config.maxCopies, 1);
-            if ((used[x.n] || 0) >= limit) {
+            if (trackUsed && (used[x.n] || 0) >= limit) {
               throw generationError(es
                 ? `Mazo ${d+1}: la carta #${x.n} ${x.name} está bloqueada, pero no quedan copias disponibles.`
                 : `Deck ${d+1}: locked card #${x.n} ${x.name} has no copies left for simultaneous use.`);
             }
             out.push(x);
-            used[x.n] = (used[x.n] || 0) + 1;
+            if (trackUsed) used[x.n] = (used[x.n] || 0) + 1;
           }
           const remaining = need - locked.length;
           const pool = shuffle(
@@ -95,7 +98,7 @@ const Generator = {
               !excludedSet.has(x.n) && x.rarity === r &&
               !locksMap[d+"-"+x.n] &&
               (!config.respectInventory || x.qty > 0) &&
-              (used[x.n] || 0) < (config.respectInventory ? x.qty : Math.max(config.maxCopies, 1))),
+              (!trackUsed || (used[x.n] || 0) < (config.respectInventory ? x.qty : Math.max(config.maxCopies, 1)))),
             rng
           );
           if (pool.length < remaining) {
@@ -105,7 +108,7 @@ const Generator = {
           }
           for (const x of pool.slice(0, remaining)) {
             out.push(x);
-            used[x.n] = (used[x.n] || 0) + 1;
+            if (trackUsed) used[x.n] = (used[x.n] || 0) + 1;
           }
           continue;
         }
@@ -128,13 +131,13 @@ const Generator = {
             const limit = config.respectInventory
               ? Math.max(0, +x.qty || 0)
               : Math.max(config.maxCopies, 1);
-            if ((used[x.n] || 0) >= limit) {
+            if (trackUsed && (used[x.n] || 0) >= limit) {
               throw generationError(es
                 ? `Mazo ${d+1}: la carta #${x.n} ${x.name} está bloqueada, pero no quedan copias disponibles.`
                 : `Deck ${d+1}: locked card #${x.n} ${x.name} has no copies left for simultaneous use.`);
             }
             out.push(x);
-            used[x.n] = (used[x.n] || 0) + 1;
+            if (trackUsed) used[x.n] = (used[x.n] || 0) + 1;
           }
           const need = q[c] - locked.length;
           const pool = shuffle(
@@ -142,7 +145,7 @@ const Generator = {
               !excludedSet.has(x.n) && x.rarity === r && x.color === c &&
               !locksMap[d+"-"+x.n] &&
               (!config.respectInventory || x.qty > 0) &&
-              (used[x.n] || 0) < (config.respectInventory ? x.qty : Math.max(config.maxCopies, 1))),
+              (!trackUsed || (used[x.n] || 0) < (config.respectInventory ? x.qty : Math.max(config.maxCopies, 1)))),
             rng
           );
           if (pool.length < need) {
@@ -152,7 +155,7 @@ const Generator = {
           }
           for (const x of pool.slice(0, need)) {
             out.push(x);
-            used[x.n] = (used[x.n] || 0) + 1;
+            if (trackUsed) used[x.n] = (used[x.n] || 0) + 1;
           }
         }
       }

@@ -17,13 +17,13 @@ document.addEventListener("click",e=>{
  const b=e.target.closest(".section-nav-btn"); if(!b)return;
  const target=b.dataset.sectionTarget;
  if(target==="collection"){
-   closeSwapModal();closeNoteModal();openCollection();Storage.saveSection("collection");return;
+   closeSwapModal();closeNoteModal();openCollection();return;
  }
  if(target==="history"){
-   closeSwapModal();closeNoteModal();openHistory();Storage.saveSection("history");return;
+   closeSwapModal();closeNoteModal();openHistory();return;
  }
  // Page sections: close any open drawer then scroll to anchor.
- if(target==="generator"||target==="decks"||target==="customdeck"){
+ if(target==="generator"||target==="customdeck"){
    closeSwapModal();closeNoteModal();
    const isCustom=target==="customdeck";
    document.getElementById("decks").style.display=isCustom?"none":"";
@@ -37,7 +37,7 @@ document.addEventListener("click",e=>{
    if(history)history.classList.remove("open");
    if(overlay)overlay.classList.remove("open");
    document.body.classList.remove("drawer-open");
-   const anchorId=target==="generator"?"section-generator":target==="decks"?"section-decks":"section-customdeck";
+   const anchorId="section-generator";
    const el=document.getElementById(anchorId);
    setStructuralActive(target);lockStructuralNav();
    Storage.saveSection(target);
@@ -70,10 +70,7 @@ setTimeout(updateStructuralNavigationLanguage,0);
       if(syncStructuralActiveFromUI())return;
       if(Date.now()<structuralNavLockUntil)return;
       if(document.body.classList.contains("custom-mode")){setStructuralActive("customdeck");return;}
-      const line=nav.classList.contains("nav-floating")?nav.getBoundingClientRect().bottom+14:90;
-      const decksEl=document.getElementById("decks");
-      const section=(decksEl&&decksEl.children.length&&decksEl.getBoundingClientRect().top<=line)?"decks":"generator";
-      setStructuralActive(section);
+      setStructuralActive("generator");
     }
     function update(){
       if(window.scrollY>triggerY){

@@ -95,8 +95,8 @@ const _rarityOrder={C:0,U:1,R:2,M:3};
 function _sortDeck(deck){
   return [...deck].sort((a,b)=>
     (_rarityOrder[a.rarity]-_rarityOrder[b.rarity])||
-    a.color.localeCompare(b.color)||
-    a.n-b.n
+    a.n-b.n||
+    a.color.localeCompare(b.color)
   );
 }
 
@@ -142,11 +142,24 @@ function customDeckSetCopies(n,val){
   renderCustomDeck();
 }
 
+function _customConfirm(message, onConfirm){
+  const es=language==="es";
+  const overlay=document.createElement("div");
+  overlay.className="custom-confirm-overlay";
+  overlay.innerHTML=`<div class="custom-confirm-box">
+    <p class="custom-confirm-msg">${message}</p>
+    <div class="custom-confirm-actions">
+      <button type="button" class="custom-confirm-cancel secondary">${es?"Cancelar":"Cancel"}</button>
+      <button type="button" class="custom-confirm-ok">${es?"Confirmar":"Confirm"}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector(".custom-confirm-cancel").onclick=()=>overlay.remove();
+  overlay.querySelector(".custom-confirm-ok").onclick=()=>{overlay.remove();onConfirm();};
+}
 function customDeckClear(){
-  if(customDeck.length&&!confirm(T("customClearConfirm")))return;
-  customDeck=[];
-  _persistCustomDeck();
-  renderCustomDeck();
+  if(!customDeck.length){customDeck=[];_persistCustomDeck();renderCustomDeck();return;}
+  _customConfirm(T("customClearConfirm"),()=>{customDeck=[];_persistCustomDeck();renderCustomDeck();});
 }
 
 function customDeckSave(){
@@ -162,10 +175,10 @@ function customDeckSave(){
   }catch(e){alert((language==="es"?"No se pudo guardar: ":"Could not save: ")+e.message)}
 }
 
-function customDeckUseGenerator(){
+function _doUseGenerator(){
   const es=language==="es";
-  if(customDeck.length&&!confirm(es?"¿Reemplazar el mazo actual con uno generado? Esta acción no se puede deshacer.":"Replace the current deck with a generated one? This cannot be undone."))return;
   try{
+    newSeed();
     const config=readGeneratorConfig();
     config.count=1;
     const result=Generator.generate(config,cards,excluded,locks);
@@ -174,6 +187,11 @@ function customDeckUseGenerator(){
     renderCustomDeck();
     showToast(es?"Generado ✓":"Generated ✓");
   }catch(e){showToast(e.message,"bad");}
+}
+function customDeckUseGenerator(){
+  const es=language==="es";
+  if(customDeck.length){_customConfirm(es?"¿Reemplazar el mazo actual con uno generado? Esta acción no se puede deshacer.":"Replace the current deck with a generated one? This cannot be undone.",()=>{_doUseGenerator();});return;}
+  _doUseGenerator();return;
 }
 
 
@@ -244,11 +262,9 @@ function importCustomDeckJSON(file){
         if(!card)throw new Error((es?"Carta desconocida #":"Unknown card #")+n);
         return card;
       });
-      customDeck=_sortDeck(loaded);
-      customDeckName=deckData.name||T("customDeck");
-      _persistCustomDeck();
-      renderCustomDeck();
-      showToast(es?"JSON importado ✓":"JSON imported ✓");
+      const _applyJson=()=>{customDeck=_sortDeck(loaded);customDeckName=deckData.name||T("customDeck");_persistCustomDeck();renderCustomDeck();showToast(es?"JSON importado ✓":"JSON imported ✓");};
+      if(customDeck.length){_customConfirm(es?"¿Reemplazar el mazo actual con el JSON importado?":"Replace current deck with imported JSON?",_applyJson);return;}
+      _applyJson();
     }catch(e){alert((es?"No se pudo importar: ":"Could not import: ")+e.message);}
   };
   reader.readAsText(file,"UTF-8");
@@ -317,16 +333,14 @@ function customDeckApplyMscImport(){
       if(!card)throw new Error((es?"Carta desconocida #":"Unknown card #")+n);
       for(let i=0;i<copies;i++)newDeck.push(card);
     }
-    if(customDeck.length&&!confirm(es?"¿Reemplazar el mazo actual con el código importado?":"Replace current deck with imported code?"))return;
     // Warn if imported composition doesn't match current rarity config
     const ns={C:+nC.value,U:+nU.value,R:+nR.value,M:+nM.value};
     const rc={C:0,U:0,R:0,M:0};
     newDeck.forEach(x=>rc[x.rarity]=(rc[x.rarity]||0)+1);
     const mismatch=rarities.some(r=>rc[r]!==ns[r]);
-    customDeck=_sortDeck(newDeck);
-    _persistCustomDeck();
-    renderCustomDeck();
-    showToast(mismatch?T("mscWarnMismatch"):T("mscLoaded"),mismatch?"bad":"");
+    const _apply=()=>{customDeck=_sortDeck(newDeck);_persistCustomDeck();renderCustomDeck();showToast(mismatch?T("mscWarnMismatch"):T("mscLoaded"),mismatch?"bad":"");};
+    if(customDeck.length){_customConfirm(es?"¿Reemplazar el mazo actual con el código importado?":"Replace current deck with imported code?",_apply);return;}
+    _apply();return;
   }catch(e){showToast(T("mscInvalid")+" "+e.message,"bad");}
 }
 
@@ -438,13 +452,27 @@ function renderCustomDeck(){
         <button class="secondary deck-json-btn" id="customSaveBtn" onclick="customDeckSave()">💾 ${T("customSave")}</button>
         <button class="secondary deck-json-btn" onclick="exportCustomDeckJSON()">${es?"Exportar JSON":"Export JSON"}</button>
         <button class="secondary deck-json-btn" onclick="document.getElementById('customJsonImportInput').click()">${es?"Importar JSON":"Import JSON"}</button>
-        <button class="secondary deck-json-btn" id="customClearBtn" onclick="customDeckClear()">🗑 ${T("customClear")}</button>
+        <button class="secondary deck-json-btn custom-clear-btn" id="customClearBtn" onclick="customDeckClear()">🗑 ${T("customClear")}</button>
       </div>
     </div>
-    <p class="small custom-deck-config-hint">${T("customSlotHint")}: C ${ns.C} · U ${ns.U} · R ${ns.R} · M ${ns.M}. ${T("customSlotHintSuffix")}</p>
+    ${_customDeckMscBarHtml()}
+    <div class="custom-deck-config-hint" onclick="document.getElementById('section-generator')?.scrollIntoView({behavior:'smooth',block:'start'})">
+      <span class="custom-deck-config-hint-icon">⚙</span>
+      <span>${es?"Estructura del mazo tomada de la configuración":"Deck structure from configuration"}: <b>C ${ns.C} · U ${ns.U} · R ${ns.R} · M ${ns.M}</b> · ${ns.C+ns.U+ns.R+ns.M} ${T("cardsWord")} ${es?"en total":"total"}</span>
+      <span class="custom-deck-config-hint-link">${es?"Cambiar ↗":"Change ↗"}</span>
+    </div>
     <div class="grid">${colorGrid}</div>
     ${_customDeckSummaryHtml()}
-    ${_customDeckMscBarHtml()}
+    ${customDeck.length===0?`<div class="custom-empty-state">
+      <p class="custom-empty-icon">✦</p>
+      <p class="custom-empty-title">${es?"Tu mazo custom está vacío":"Your custom deck is empty"}</p>
+      <p class="custom-empty-sub small">${es?"Puedes empezar de tres formas:":"You can start in three ways:"}</p>
+      <div class="custom-empty-options">
+        <div class="custom-empty-option"><span>⚡</span><span>${es?"Usa el generador para crear un mazo base editable":"Use the generator to create an editable base deck"}</span></div>
+        <div class="custom-empty-option"><span>+</span><span>${es?"Agrega cartas una por una desde los slots vacíos":"Add cards one by one from the empty slots"}</span></div>
+        <div class="custom-empty-option"><span>MSC</span><span>${es?"Importa un código MSC para cargar un mazo guardado":"Import an MSC code to load a saved deck"}</span></div>
+      </div>
+    </div>`:""}
     <div class="table-scroll"><table>
       <tr>
         ${sortableHeader("customdeck","n","#")}
@@ -467,16 +495,18 @@ function renderCustomDeck(){
     if(inp&&mscImportVal){inp.value=mscImportVal;customDeckValidateMscInput(inp);}
   }
 
-  // Name input change handler
-  document.getElementById("customDeckNameInput")?.addEventListener("change",e=>{
-    customDeckName=(e.target.value||"").trim()||T("customDeck");
-    _persistCustomDeck();
-  });
+  // Name input: use onchange attribute in HTML, handled via delegation below
 
   _updateCustomNavBadge();
   _updateCustomStickyBar();
   if(document.body.classList.contains("custom-mode"))_initCustomStickyBar();
 }
+
+// Global delegated listeners — registered once, never stacked
+document.addEventListener("change",e=>{
+  const inp=e.target.closest("#customDeckNameInput");
+  if(inp){customDeckName=(inp.value||"").trim()||T("customDeck");_persistCustomDeck();}
+});
 
 function renderAddCardSearch(){
   const el=document.getElementById("addCardResults");if(!el)return;

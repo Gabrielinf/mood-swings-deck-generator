@@ -36,6 +36,28 @@ html,body{max-width:100%;overflow-x:hidden}
 .card{max-width:100%;box-sizing:border-box}
 .table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .table-scroll table{min-width:620px}
+@media(max-width:560px){
+  /* Deck tables: fixed layout, hide Color column, compact */
+  #decks .table-scroll,#customDeckSection .table-scroll{overflow-x:hidden}
+  #decks .table-scroll table,#customDeckSection .table-scroll table{
+    min-width:0!important;width:100%;table-layout:fixed;font-size:11px
+  }
+  /* Generated deck: lock | # | name | rarity | action */
+  #decks .table-scroll th:nth-child(1),#decks .table-scroll td:nth-child(1){width:28px;text-align:center}
+  #decks .table-scroll th:nth-child(2),#decks .table-scroll td:nth-child(2){width:30px;text-align:center}
+  #decks .table-scroll th:nth-child(3),#decks .table-scroll td:nth-child(3){width:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #decks .table-scroll th:nth-child(4),#decks .table-scroll td:nth-child(4){display:none}
+  #decks .table-scroll th:nth-child(5),#decks .table-scroll td:nth-child(5){width:32px;text-align:center}
+  #decks .table-scroll th:nth-child(6),#decks .table-scroll td:nth-child(6){width:52px;text-align:center}
+  /* Custom deck: # | name | color(hidden) | rarity | copies | remove */
+  #customDeckSection .table-scroll th:nth-child(1),#customDeckSection .table-scroll td:nth-child(1){width:30px;text-align:center}
+  #customDeckSection .table-scroll th:nth-child(2),#customDeckSection .table-scroll td:nth-child(2){width:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #customDeckSection .table-scroll th:nth-child(3),#customDeckSection .table-scroll td:nth-child(3){display:none}
+  #customDeckSection .table-scroll th:nth-child(4),#customDeckSection .table-scroll td:nth-child(4){width:32px;text-align:center}
+  #customDeckSection .table-scroll th:nth-child(5),#customDeckSection .table-scroll td:nth-child(5){width:80px;text-align:center}
+  #customDeckSection .table-scroll th:nth-child(6),#customDeckSection .table-scroll td:nth-child(6){width:36px;text-align:center}
+  #decks .change-btn,#customDeckSection .change-btn{padding:4px 4px;font-size:9px}
+}
 @media(max-width:700px){
   body{padding:10px}
   h1{font-size:24px;line-height:1.15}

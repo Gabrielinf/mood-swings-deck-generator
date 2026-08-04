@@ -1,2 +1,2 @@
 # mood-swings-deck-generator
-Deck generator for Mood Swings TCG
+Deck generator for Magic: The Gathering — Mood Swings

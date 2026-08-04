@@ -461,25 +461,37 @@ function sortableHeader(tableId,col,text){return `<th class="sortable" onclick="
 
 
 function inventoryUsed(exceptDeckIndex=null,exceptCardNumber=null){
+  // Counts physical copies consumed: 1 per deck that uses the card, regardless of intra-deck duplicates.
   let used={};
-  decks.forEach((d,di)=>d.forEach(x=>{
-    if(di===exceptDeckIndex && x.n===exceptCardNumber)return;
-    used[x.n]=(used[x.n]||0)+1;
-  }));
+  decks.forEach((d,di)=>{
+    const seen=new Set();
+    d.forEach(x=>{
+      if(di===exceptDeckIndex && x.n===exceptCardNumber)return;
+      if(!seen.has(x.n)){seen.add(x.n);used[x.n]=(used[x.n]||0)+1;}
+    });
+  });
   return used;
 }
-function swapCandidateState(x,current,deckIndex,cardNumber,used,inDeck){
+function swapCandidateState(x,current,deckIndex,cardNumber,crossUsed,deckCopies){
+  const mc=Math.max(1,+maxCopies.value||1);
   let reasons=[];
-  if(x.n===cardNumber)reasons.push(language==="es"?"Es la carta actual.":"This is the current card.");
   if(x.rarity!==current.rarity)reasons.push(language==="es"?"Rareza diferente.":"Different rarity.");
   if(excluded.has(x.n))reasons.push(language==="es"?"Carta excluida.":"Card is excluded.");
-  if(inDeck.has(x.n))reasons.push(language==="es"?"Ya está en este mazo.":"Already in this deck.");
-  let usedQty=used[x.n]||0;
-  let limit=respectInv.checked?Math.max(0,+x.qty||0):Math.max(1,+maxCopies.value||1);
-  let available=Math.max(0,limit-usedQty);
-  if(respectInv.checked && x.qty<=0)reasons.push(language==="es"?"No tienes copias en la colección.":"No copies in collection.");
-  else if(available<=0)reasons.push(respectInv.checked?(language==="es"?"Todas las copias disponibles están siendo usadas.":"All available copies are already in use."):(language==="es"?"Se alcanzó el máximo de copias permitido.":"Maximum allowed copies reached."));
-  return {valid:reasons.length===0,reasons,available,usedQty};
+  // inDeckCount: copies of x in this deck (excluding the swapped slot)
+  const inDeckCount=deckCopies[x.n]||0;
+  // crossUsed excludes the current deck entirely (inventoryUsed called with exceptDeckIndex)
+  const otherDecksCount=crossUsed[x.n]||0;
+  let intraLimit;
+  if(respectInv.checked){
+    const remaining=Math.max(0,(+x.qty||0)-otherDecksCount);
+    if(remaining<=0){reasons.push(language==="es"?"No tienes copias en la colección.":"No copies in collection.");}
+    intraLimit=remaining>0?mc:0;
+  }else{
+    intraLimit=mc;
+  }
+  const available=Math.max(0,intraLimit-inDeckCount);
+  if(!reasons.length&&available<=0)reasons.push(respectInv.checked?(language==="es"?"Todas las copias disponibles están siendo usadas.":"All available copies are already in use."):(language==="es"?"Se alcanzó el máximo de copias permitido.":"Maximum allowed copies reached."));
+  return {valid:reasons.length===0,reasons,available,usedQty:inDeckCount};
 }
 
 function swapOptionHtml(x,state){
@@ -490,10 +502,13 @@ function swapOptionHtml(x,state){
 function openSwapModal(deckIndex,cardNumber){
   let current=decks[deckIndex]?.find(x=>x.n===cardNumber);if(!current)return;
   swapContext={deckIndex,cardNumber};
-  let used=inventoryUsed(deckIndex,cardNumber);
-  let inDeck=new Set(decks[deckIndex].filter(x=>x.n!==cardNumber).map(x=>x.n));
+  // crossUsed: total copies of each card across all decks, minus the card being swapped out
+  let crossUsed=inventoryUsed(deckIndex,cardNumber);
+  // deckCopies: copies of each card in this deck, minus the swapped slot
+  let deckCopies={};
+  decks[deckIndex].forEach(x=>{if(x.n!==cardNumber)deckCopies[x.n]=(deckCopies[x.n]||0)+1;});
   let candidates=cards.filter(x=>x.n!==cardNumber&&x.rarity===current.rarity);
-  let entries=candidates.map(x=>({card:x,state:swapCandidateState(x,current,deckIndex,cardNumber,used,inDeck)}));
+  let entries=candidates.map(x=>({card:x,state:swapCandidateState(x,current,deckIndex,cardNumber,crossUsed,deckCopies)}));
   let validCount=entries.filter(e=>e.state.valid).length;
   let same=entries.filter(e=>e.card.color===current.color).sort((a,b)=>a.card.n-b.card.n);
   let otherGroups=colors.filter(c=>c!==current.color).map(c=>({
@@ -546,8 +561,10 @@ function deckSummaryHtml(d){
  let expected=target.C+target.U+target.R+target.M;
  if(d.length!==expected)errors.push((language==="es"?"Cantidad de cartas":"Card count")+`: ${d.length} / ${expected}`);
  ["C","U","R","M"].forEach(r=>{if(rc[r]!==target[r])errors.push(`${r}: ${rc[r]} / ${target[r]}`)});
- let nums=d.map(x=>x.n),dups=[...new Set(nums.filter((n,i)=>nums.indexOf(n)!==i))];
- if(dups.length)errors.push((language==="es"?"Cartas repetidas":"Duplicate cards")+": "+dups.join(", "));
+ const mc=+maxCopies.value||1;
+ const numCounts={};d.forEach(x=>numCounts[x.n]=(numCounts[x.n]||0)+1);
+ const overLimit=Object.entries(numCounts).filter(([,cnt])=>cnt>mc).map(([n])=>+n);
+ if(overLimit.length)errors.push((language==="es"?"Cartas sobre el límite":"Cards over copy limit")+": "+overLimit.join(", "));
  let valid=!errors.length;
  return `<div class="deck-summary">
  <span class="deck-summary-status ${valid?"valid":"invalid"}">${valid?(language==="es"?"✓ Mazo válido":"✓ Valid deck"):(language==="es"?"⚠ Revisar mazo":"⚠ Check deck")}</span>
@@ -558,13 +575,13 @@ function deckSummaryHtml(d){
 }
 function deckCollectionStatusHtml(deck){
   if(!respectInv.checked)return "";
-  const required={};
-  deck.forEach(x=>required[x.n]=(required[x.n]||0)+1);
+  // Each unique card needs exactly 1 physical copy regardless of intra-deck duplicates.
+  const unique=[...new Set(deck.map(x=>x.n))];
   const missing=[];
-  Object.entries(required).forEach(([n,need])=>{
-    const card=cards.find(x=>x.n===+n);
+  unique.forEach(n=>{
+    const card=cards.find(x=>x.n===n);
     const have=card?(+card.qty||0):0;
-    if(have<need)missing.push({card,need,have,missing:need-have});
+    if(have<1)missing.push({card,need:1,have,missing:1-have});
   });
   const es=language==="es";
   if(!missing.length)return `<div class="deck-collection-check ok">✓ ${es?"Puedes construir este mazo con tu colección.":"You can build this deck from your collection."}</div>`;

@@ -55,23 +55,56 @@ const Generator = {
   // config: { count, maxCopies, respectInventory, seed, rarityCounts:{C,U,R,M},
   //           colorMode, priorityMode, priority:[...], manualDistribution:{r:{c:n}},
   //           lang }
-  // Returns: array of decks (each deck = array of card objects)
+  // Returns: array of decks (each deck = array of card objects, duplicates allowed up to maxCopies)
   generate(config, cardPool, excludedSet, locksMap) {
     const es = config.lang === "es";
     const rng = makeSeededRng(config.seed);
-    // used tracks copies across decks only when respecting inventory.
-    // Without inventory, each deck draws independently from the full pool.
-    const used = {};
+    const mc = config.maxCopies;
+    // crossUsed[n] = number of OTHER decks that already use card n (1 per deck, not per copy).
+    const crossUsed = {};
     const result = [];
-    const trackUsed = config.respectInventory;
 
     for (let d = 0; d < config.count; d++) {
       const out = [];
+      // deckUsed[n] = copies of card n already placed in this deck.
+      const deckUsed = {};
+
+      // Available intra-deck slots remaining for card x.
+      // respectInventory: needs at least 1 physical copy not consumed by other decks.
+      // maxCopies always caps how many times a card can appear inside one deck.
+      function slotsFor(x) {
+        if (config.respectInventory) {
+          const physicalLeft = Math.max(0, (+x.qty || 0) - (crossUsed[x.n] || 0));
+          if (physicalLeft < 1) return 0;
+        }
+        return Math.max(0, mc - (deckUsed[x.n] || 0));
+      }
+
+      function addCard(x) {
+        out.push(x);
+        deckUsed[x.n] = (deckUsed[x.n] || 0) + 1;
+      }
+
+      // Pick `need` cards from eligible subset, allowing up to mc copies of each.
+      // Builds a bag where each card appears slotsFor(x) times, shuffles it,
+      // then slices — duplicates arise naturally from the random draw.
+      // Returns { ok, cards } or { ok: false, available }.
+      function pick(baseFilter, need) {
+        const bag = shuffle(
+          cardPool
+            .filter(x => baseFilter(x) && slotsFor(x) > 0)
+            .flatMap(x => Array(slotsFor(x)).fill(x)),
+          rng
+        );
+        if (bag.length < need) return { ok: false, available: bag.length };
+        return { ok: true, cards: bag.slice(0, need) };
+      }
+
       for (const r of rarities) {
         const q = _quota(r, config, rng);
 
         if (q === null) {
-          // Free color mode: pick rarityCounts[r] cards ignoring color distribution.
+          // Free color mode
           const need = config.rarityCounts[r];
           const locked = cardPool.filter(x =>
             locksMap[d+"-"+x.n] && x.rarity === r && !excludedSet.has(x.n));
@@ -81,35 +114,26 @@ const Generator = {
               : `Deck ${d+1}: too many locked ${r} cards.`);
           }
           for (const x of locked) {
-            const limit = config.respectInventory
-              ? Math.max(0, +x.qty || 0)
-              : Math.max(config.maxCopies, 1);
-            if (trackUsed && (used[x.n] || 0) >= limit) {
+            if (slotsFor(x) < 1) {
               throw generationError(es
                 ? `Mazo ${d+1}: la carta #${x.n} ${x.name} está bloqueada, pero no quedan copias disponibles.`
-                : `Deck ${d+1}: locked card #${x.n} ${x.name} has no copies left for simultaneous use.`);
+                : `Deck ${d+1}: locked card #${x.n} ${x.name} has no copies left.`);
             }
-            out.push(x);
-            if (trackUsed) used[x.n] = (used[x.n] || 0) + 1;
+            addCard(x);
           }
           const remaining = need - locked.length;
-          const pool = shuffle(
-            cardPool.filter(x =>
-              !excludedSet.has(x.n) && x.rarity === r &&
-              !locksMap[d+"-"+x.n] &&
-              (!config.respectInventory || x.qty > 0) &&
-              (!trackUsed || (used[x.n] || 0) < (config.respectInventory ? x.qty : Math.max(config.maxCopies, 1)))),
-            rng
+          const res = pick(x =>
+            !excludedSet.has(x.n) && x.rarity === r &&
+            !locksMap[d+"-"+x.n] &&
+            (!config.respectInventory || (+x.qty || 0) > 0),
+            remaining
           );
-          if (pool.length < remaining) {
+          if (!res.ok) {
             throw generationError(es
-              ? `No se puede completar el Mazo ${d+1}: faltan ${remaining - pool.length} carta(s) de rareza ${r}. Disponibles: ${pool.length}; necesarias: ${remaining}. Revisa colección, exclusiones o máximo de copias.`
-              : `Deck ${d+1} cannot be completed: ${remaining - pool.length} ${r} card(s) short. Available: ${pool.length}; needed: ${remaining}. Check collection, exclusions, or max copies.`);
+              ? `No se puede completar el Mazo ${d+1}: faltan ${remaining - res.available} carta(s) de rareza ${r}. Disponibles: ${res.available}; necesarias: ${remaining}. Revisa colección, exclusiones o máximo de copias.`
+              : `Deck ${d+1} cannot be completed: ${remaining - res.available} ${r} card(s) short. Available: ${res.available}; needed: ${remaining}. Check collection, exclusions, or max copies.`);
           }
-          for (const x of pool.slice(0, remaining)) {
-            out.push(x);
-            if (trackUsed) used[x.n] = (used[x.n] || 0) + 1;
-          }
+          for (const x of res.cards) addCard(x);
           continue;
         }
 
@@ -128,37 +152,35 @@ const Generator = {
               : `Deck ${d+1}: too many locked ${r} ${c} cards.`);
           }
           for (const x of locked) {
-            const limit = config.respectInventory
-              ? Math.max(0, +x.qty || 0)
-              : Math.max(config.maxCopies, 1);
-            if (trackUsed && (used[x.n] || 0) >= limit) {
+            if (slotsFor(x) < 1) {
               throw generationError(es
                 ? `Mazo ${d+1}: la carta #${x.n} ${x.name} está bloqueada, pero no quedan copias disponibles.`
-                : `Deck ${d+1}: locked card #${x.n} ${x.name} has no copies left for simultaneous use.`);
+                : `Deck ${d+1}: locked card #${x.n} ${x.name} has no copies left.`);
             }
-            out.push(x);
-            if (trackUsed) used[x.n] = (used[x.n] || 0) + 1;
+            addCard(x);
           }
           const need = q[c] - locked.length;
-          const pool = shuffle(
-            cardPool.filter(x =>
-              !excludedSet.has(x.n) && x.rarity === r && x.color === c &&
-              !locksMap[d+"-"+x.n] &&
-              (!config.respectInventory || x.qty > 0) &&
-              (!trackUsed || (used[x.n] || 0) < (config.respectInventory ? x.qty : Math.max(config.maxCopies, 1)))),
-            rng
+          const res = pick(x =>
+            !excludedSet.has(x.n) && x.rarity === r && x.color === c &&
+            !locksMap[d+"-"+x.n] &&
+            (!config.respectInventory || (+x.qty || 0) > 0),
+            need
           );
-          if (pool.length < need) {
+          if (!res.ok) {
             throw generationError(es
-              ? `No se puede completar el Mazo ${d+1}: faltan ${need - pool.length} carta(s) ${r} ${c}. Disponibles: ${pool.length}; necesarias: ${need}. Revisa colección, exclusiones, bloqueos, máximo de copias o distribución.`
-              : `Deck ${d+1} cannot be completed: ${need - pool.length} ${r} ${c} card(s) short. Available: ${pool.length}; needed: ${need}. Check collection, exclusions, locks, max copies, or distribution.`);
+              ? `No se puede completar el Mazo ${d+1}: faltan ${need - res.available} carta(s) ${r} ${c}. Disponibles: ${res.available}; necesarias: ${need}. Revisa colección, exclusiones, bloqueos, máximo de copias o distribución.`
+              : `Deck ${d+1} cannot be completed: ${need - res.available} ${r} ${c} card(s) short. Available: ${res.available}; needed: ${need}. Check collection, exclusions, locks, max copies, or distribution.`);
           }
-          for (const x of pool.slice(0, need)) {
-            out.push(x);
-            if (trackUsed) used[x.n] = (used[x.n] || 0) + 1;
-          }
+          for (const x of res.cards) addCard(x);
         }
       }
+
+      if (config.respectInventory) {
+        // 1 physical copy consumed per deck per card, regardless of intra-deck duplicates.
+        for (const n of Object.keys(deckUsed))
+          crossUsed[n] = (crossUsed[n] || 0) + 1;
+      }
+
       result.push(out);
     }
     return result;

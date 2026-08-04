@@ -504,7 +504,7 @@ html,body{max-width:100%;overflow-x:hidden}
 .config-section-title{margin-bottom:6px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#667085}
 .config-section-toggle{cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none;margin-bottom:0}
 .config-section-toggle:hover{color:#344054}
-.config-collapse-icon{margin-left:auto;flex:none;font-size:14px;line-height:1;color:#667085;display:inline-block;font-style:normal;transform:rotate(180deg)}
+.config-collapse-icon{margin-left:auto;flex:none;font-size:18px;line-height:1;color:#667085;display:inline-block;font-style:normal;transform:rotate(180deg)}
 .config-collapsible.collapsed .config-collapse-icon{transform:rotate(0deg)}
 .config-section-summary{font-weight:500;color:#344054;letter-spacing:0;text-transform:none;font-size:10px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .config-collapsible .config-collapsible-content{margin-top:6px}

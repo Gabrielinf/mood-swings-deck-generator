@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.3.0 — Max Copies, History → Custom, MSC Import per Deck
+
+### New features
+
+**Max copies intra-deck (`js/generator.js`)**
+- `maxCopies` now allows a card to appear up to N times within a single deck
+- Bag model: each eligible card is inserted `slotsFor(x)` times into the pool, shuffled, then sliced — duplicates arise naturally from the random draw, never forced
+- `respectInventory` only gates cross-deck physical availability (1 copy consumed per deck that uses the card, regardless of how many times it appears in that deck); it no longer caps the intra-deck count
+- `deckSummaryHtml` flags only cards exceeding `maxCopies`, not all duplicates
+- Swap modal (`swapCandidateState`) and collection status (`deckCollectionStatusHtml`, `inventoryUsed`) updated to match the new model
+
+**Load into Custom from history (`js/history.js`, `js/customDeck.js`)**
+- "✦ Load into Custom" button now appears for generated entries, not only custom ones
+- Single-deck entries: one button; multi-deck entries: one button per deck showing its name
+- `loadHistoryEntryToCustomDeck(entryIndex, deckIndex)` — `deckIndex` param added (default 0)
+
+**MSC import per deck in generator (`js/app.js`)**
+- Each generated deck's MSC bar now has an "Import code" button
+- Toggles an inline panel (same UX as Custom Deck): input + Load button + validation status
+- Importing replaces only that deck slot — other decks and their locks are preserved
+- New functions: `deckMscToggleImport(i)`, `deckMscValidate(i, inp)`, `deckMscApply(i)`
+
+### Other
+- `css/main.css`: collapse icon size 14px → 18px
+- `assets/` folder removed (was empty)
+
+---
+
 ## 2.2.0 — Design & UX Polish, Generator Improvements
 
 ### New features

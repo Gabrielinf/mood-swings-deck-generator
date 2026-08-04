@@ -53,6 +53,8 @@ js/app.js           ← setup, config UI, generador coordinador, swap modal, ren
 | `applyConfigToUI(c, opts)` | `app.js` | Escribe config al DOM — única implementación |
 | `Storage.saveCollection(cards)` | `storage.js` | Guarda colección en localStorage |
 | `Storage.loadHistory()` / `Storage.saveHistory(h)` | `storage.js` | Historial |
+| `loadHistoryEntryToCustomDeck(entryIndex, deckIndex)` | `customDeck.js` | Carga un deck del historial al Custom Deck Editor |
+| `deckMscApply(i)` | `app.js` | Importa un código MSC al deck slot `i` del generador |
 
 ## Convenciones
 
@@ -62,15 +64,18 @@ js/app.js           ← setup, config UI, generador coordinador, swap modal, ren
 - Idiomas: español (`es`) e inglés (`en`). Textos via `T(key)` de `i18n.js`
 - `language` es el global que controla el idioma activo
 
-## Estado actual (2026-08-01)
+## Estado actual (2026-08-04)
 
 Refactorización Fase 1–12 completada.
 `app.js` pasó de 1217 → 391 líneas.
 
+### Funcionalidades implementadas (post-fase 12)
+- **Max copies intra-deck:** `maxCopies` permite que una carta aparezca N veces dentro de un mismo mazo. El motor usa un bag model: cada carta se inserta `slotsFor(x)` veces en el pool, se shufflea, y se hace slice. `respectInventory` solo controla disponibilidad cross-deck (1 copia física por deck que la use), no el límite intra-deck.
+- **Load into Custom desde historial:** entradas generadas y custom muestran botón "✦ Cargar en Custom". Si la entrada tiene múltiples decks, hay un botón por deck. `loadHistoryEntryToCustomDeck(entryIndex, deckIndex)`.
+- **MSC import por deck en generador:** cada deck tiene botón "Import code" en su barra MSC. Al importar, reemplaza solo ese slot sin afectar los otros decks ni sus locks. Funciones: `deckMscToggleImport`, `deckMscValidate`, `deckMscApply`.
+
 ### Fases pendientes
 - **Fase 6:** Modelo de deck explícito `{id, name, type, seed, cards:[{number, copies}]}`
-- **Fase 7:** Custom Deck Editor — reutiliza `Generator.generate`, no crea motor paralelo
-- **Fase 8:** Códigos MSC portables (`MSC.encode` / `MSC.decode`) para custom decks
 - **Prueba mobile:** pendiente para cuando se suba a GitHub Pages
 
 ## Modos de distribución de colores

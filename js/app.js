@@ -69,7 +69,8 @@ function updateConfigSectionSummaries(){
 function setup(){
 ["nC","nU","nR","nM"].forEach(id=>document.getElementById(id).addEventListener("change",()=>{syncDeckSizeFromRarities()}));["prio1","prio2","prio3","prio4","prio5"].forEach((id,i)=>{let e=document.getElementById(id);e.onchange=()=>enforceUniquePriority(e);e.innerHTML=colors.map(c=>`<option value="${c}">${colorOptionText(c)}</option>`).join("");e.value=colors[i]});rarities.forEach(r=>{document.getElementById("manualBody").innerHTML+=`<tr><th>${r}</th>${colors.map(c=>`<td><input id="q${r}${c}" type=number min=0 value=0></td>`).join("")}</tr>`});document.getElementById("mode").onchange=()=>{const v=document.getElementById("mode").value;const colorsCollapsed=document.getElementById("configSectionColors")?.classList.contains("collapsed");document.getElementById("manual").style.display=(!colorsCollapsed&&v==="manual")?"block":"none";document.getElementById("priorityControls").style.display=(!colorsCollapsed&&v==="balanced"&&document.getElementById("priorityMode").value==="fixed")?"flex":"none";updateDeckCountHelp();};loadConfig();setLang(language)}
 function setLang(v){language=v;document.documentElement.lang=v;Storage.saveLanguage(v);
-let lb=document.getElementById("langButton");if(lb)lb.innerHTML=v==="es"?'<span class="flag-svg flag-es"></span><span>Español</span>':'<span class="flag-svg flag-gb"></span><span>English</span>';document.documentElement.lang=v;for(const [id,k] of [["tTitle","title"],["tSub","sub"],["tConfig","config"],["tDeckSize","deckSize"],["tRatioPreset","ratioPreset"],["tC","C"],["tU","U"],["tR","R"],["tM","M"],["tCopies","copies"],["tDecks","decks"],["tMode","mode"],["tPreset","preset"],["tInventory","inventory"],["tInventoryHelp","inventoryHelp"],["tPriorityMode","priorityMode"],["tManual","manual"],["tGenerate","generate"],["tReroll","reroll"],["generateHelp","generateHelp"]])document.getElementById(id).textContent=T(k);mode.options[0].text=T("balancedAuto");mode.options[1].text=T("freeColor");mode.options[2].text=T("manualDistribution");priorityMode.options[0].text=T("randomPriority");priorityMode.options[1].text=T("fixedPriority");
+let lb=document.getElementById("langButton");if(lb)lb.innerHTML=v==="es"?'<span class="flag-svg flag-es"></span><span>Español</span>':'<span class="flag-svg flag-gb"></span><span>English</span>';document.documentElement.lang=v;for(const [id,k] of [["tTitle","title"],["tSub","sub"],["tConfig","config"],["tDeckSize","deckSize"],["tRatioPreset","ratioPreset"],["tC","C"],["tU","U"],["tR","R"],["tM","M"],["tCopies","copies"],["tDecks","decks"],["tMode","mode"],["tPreset","preset"],["tInventory","inventory"],["tInventoryHelp","inventoryHelp"],["tPriorityMode","priorityMode"],["tManual","manual"],["tGenerate","generate"],["tReroll","reroll"],["generateHelp","generateHelp"]])document.getElementById(id).textContent=T(k);
+mode.options[0].text=T("balancedAuto");mode.options[1].text=T("freeColor");mode.options[2].text=T("manualDistribution");priorityMode.options[0].text=T("randomPriority");priorityMode.options[1].text=T("fixedPriority");
 ratioPreset.options[0].text=T("ratioBase");ratioPreset.options[1].text=T("ratioCommon");ratioPreset.options[2].text=T("ratioBalanced");ratioPreset.options[3].text=T("ratioRare");ratioPreset.options[4].text=T("ratioCustom");
 preset.options[1].text=T("presetStandard");preset.options[2].text=T("presetPriority");preset.options[3].text=T("presetTwo");preset.options[4].text=T("presetThree");preset.options[5].text=T("presetManual");["prio1","prio2","prio3","prio4","prio5"].forEach(id=>{let e=document.getElementById(id);[...e.options].forEach(o=>o.text=colorOptionText(o.value))});if(collectionDrawer&&document.getElementById("collectionDrawer").classList.contains("open")){drawerTitle.textContent=T("collectionTitle");collectionSearch.placeholder=T("search");renderCollection();}if(historyDrawer&&document.getElementById("historyDrawer").classList.contains("open")){document.getElementById("historyDrawerTitle").textContent=T("history");renderHistoryList();}updateStickyBar();if(typeof decks!=="undefined"&&decks.length)render();let cd=document.getElementById("collectionDrawer");if(cd&&cd.classList.contains("open"))renderCollection();let hd=document.getElementById("historyDrawer");if(hd&&hd.classList.contains("open")){if(typeof activeHistoryIndex!=="undefined"&&activeHistoryIndex!==null)showHistoryEntry(activeHistoryIndex);else renderHistoryList();}updateCustomDeckUI();}
 function needs(){return {C:+nC.value,U:+nU.value,R:+nR.value,M:+nM.value}}
@@ -547,11 +548,65 @@ function deckMscBarHtml(d,i){
   try{code=MSC.encode(d);}catch(e){}
   if(!code)return"";
   const enc=v=>v.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+  const es=language==="es";
   return`<div class="msc-bar">
     <span class="msc-label">MSC</span>
     <span class="msc-code">${enc(code)}</span>
     <button type="button" class="msc-btn deck-msc-copy-btn" data-msc="${enc(code)}">${T("mscCopy")}</button>
+    <button type="button" class="msc-btn secondary" onclick="deckMscToggleImport(${i})">${T("mscImport")}</button>
+  </div>
+  <div class="msc-import-row" id="deckMscImportRow-${i}" style="display:none">
+    <input type="text" id="deckMscInput-${i}" class="msc-import-input" placeholder="MSC2-…" autocomplete="off" spellcheck="false"
+      oninput="deckMscValidate(${i},this)" onkeydown="if(event.key==='Enter')deckMscApply(${i})">
+    <button type="button" class="msc-btn" id="deckMscApplyBtn-${i}" onclick="deckMscApply(${i})" disabled>${es?"Cargar":"Load"}</button>
+    <span class="msc-import-status" id="deckMscStatus-${i}"></span>
   </div>`;
+}
+function deckMscToggleImport(i){
+  const row=document.getElementById("deckMscImportRow-"+i);if(!row)return;
+  const open=row.style.display==="none";
+  row.style.display=open?"flex":"none";
+  if(open){
+    const inp=document.getElementById("deckMscInput-"+i);
+    if(inp){inp.value="";inp.focus();}
+    const status=document.getElementById("deckMscStatus-"+i);
+    if(status)status.textContent="";
+    const btn=document.getElementById("deckMscApplyBtn-"+i);
+    if(btn)btn.disabled=true;
+  }
+}
+function deckMscValidate(i,inp){
+  const val=(inp.value||"").trim();
+  const btn=document.getElementById("deckMscApplyBtn-"+i);
+  const status=document.getElementById("deckMscStatus-"+i);
+  if(!val){if(btn)btn.disabled=true;if(status)status.textContent="";return;}
+  const valid=MSC.validate(val);
+  if(btn)btn.disabled=!valid;
+  if(status){
+    const es=language==="es";
+    status.textContent=valid?(es?"✓ Código válido":"✓ Valid code"):(es?"Código inválido":"Invalid code");
+    status.className="msc-import-status "+(valid?"ok":"bad");
+  }
+}
+function deckMscApply(i){
+  const inp=document.getElementById("deckMscInput-"+i);
+  const code=(inp?.value||"").trim();if(!code)return;
+  const es=language==="es";
+  try{
+    const entries=MSC.decode(code);
+    const deck=[];
+    for(const {n,copies} of entries){
+      const card=cards.find(x=>x.n===n);
+      if(!card)throw new Error((es?"Carta desconocida #":"Unknown card #")+n);
+      for(let i=0;i<copies;i++)deck.push(card);
+    }
+    // Clear locks for this deck slot only
+    Object.keys(locks).forEach(k=>{if(k.startsWith(i+"-"))delete locks[k];});
+    decks[i]=deck;
+    if(!deckNames[i])deckNames[i]="";
+    render();
+    showToast(T("mscLoaded"));
+  }catch(e){showToast(T("mscInvalid")+" "+e.message,"bad");}
 }
 
 function deckSummaryHtml(d){

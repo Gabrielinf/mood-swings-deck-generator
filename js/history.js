@@ -198,7 +198,10 @@ function showHistoryEntry(index){
     ${isGenerated&&z.seed?`<button type="button" class="secondary history-restore-btn" onclick="copyHistorySeed(${index})">${es?"Copiar seed":"Copy seed"}</button>`:""}
     ${isGenerated?`<button type="button" class="secondary history-restore-btn" onclick="restoreHistoryConfiguration(${index})">↩ ${es?"Restaurar configuración":"Restore configuration"}</button>`:""}
     ${isGenerated&&z.seed?`<button type="button" class="history-generate-btn" onclick="generateFromHistory(${index})">▶ ${es?"Generar con esta seed":"Generate with this seed"}</button>`:""}
-    ${!isGenerated?`<button type="button" class="history-generate-btn" onclick="loadHistoryEntryToCustomDeck(${index})">✦ ${es?"Cargar en Custom":"Load into Custom"}</button>`:""}
+    ${isGenerated?(z.decks.length===1
+      ?`<button type="button" class="history-generate-btn" onclick="loadHistoryEntryToCustomDeck(${index},0)">✦ ${es?"Cargar en Custom":"Load into Custom"}</button>`
+      :z.decks.map((d,di)=>`<button type="button" class="history-generate-btn" onclick="loadHistoryEntryToCustomDeck(${index},${di})">✦ ${es?"Cargar en Custom":"Load into Custom"}: ${d.name||`${T("deck")} ${di+1}`}</button>`).join("")
+    ):`<button type="button" class="history-generate-btn" onclick="loadHistoryEntryToCustomDeck(${index},0)">✦ ${es?"Cargar en Custom":"Load into Custom"}</button>`}
   </div>`:"";
   el.innerHTML=`<button class="secondary history-back" onclick="activeHistoryIndex=null;renderHistoryList()">← ${es?"Volver al historial":"Back to history"}</button>
   <p class="small"><b>${z.date}</b> ${historyTypeBadge(z)}</p>

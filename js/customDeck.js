@@ -196,10 +196,11 @@ function customDeckUseGenerator(){
 
 
 // Fase 9: load into custom deck from history entry
-function loadHistoryEntryToCustomDeck(entryIndex){
+function loadHistoryEntryToCustomDeck(entryIndex,deckIndex){
+  deckIndex=deckIndex||0;
   const z=getHistory()[entryIndex];
-  if(!z||!z.decks||!z.decks[0])return;
-  const deckData=z.decks[0];
+  if(!z||!z.decks||!z.decks[deckIndex])return;
+  const deckData=z.decks[deckIndex];
   const loaded=deckData.cards.map(n=>cards.find(x=>x.n===+n)).filter(Boolean);
   if(!loaded.length){showToast(language==="es"?"No se encontraron cartas.":"No cards found.","bad");return;}
   customDeck=_sortDeck(loaded);

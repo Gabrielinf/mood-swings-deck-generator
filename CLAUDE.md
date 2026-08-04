@@ -1,99 +1,99 @@
 # Mood Swings Deck Generator — CLAUDE.md
 
-## Qué es este proyecto
+## What this project is
 
-Aplicación web estática para generar y administrar mazos del juego de cartas Mood Swings.
-Publicada en GitHub Pages. Sin backend, sin build step, sin npm.
-Stack: HTML + CSS + JavaScript vanilla.
+Static web app to generate and manage decks for the Mood Swings card game.
+Published on GitHub Pages. No backend, no build step, no npm.
+Stack: HTML + CSS + vanilla JavaScript.
 
-## Reglas absolutas
+## Absolute rules
 
-### No romper compatibilidad
-- **localStorage keys** — nunca renombrar sin implementar migración primero:
-  - `msLang` — idioma seleccionado
-  - `msCardsV3` — colección del usuario (cantidades por carta)
-  - `msExcludedV3` — cartas excluidas
-  - `msConfigV3` — configuración del generador
-  - `msHistoryV4` — historial de mazos guardados
-- **Seed algorithm** — `seedHash` + `makeSeededRng` en `js/utils.js` no deben modificarse. Misma seed + misma config + mismas cartas = mismo mazo siempre.
-- **JSON format** — versión 2 con migración v1→v2 preservada en `js/json.js`. No eliminar `normalizeDeckJSON`.
+### Do not break compatibility
+- **localStorage keys** — never rename without implementing a migration first:
+  - `msLang` — selected language
+  - `msCardsV3` — user collection (quantities per card)
+  - `msExcludedV3` — excluded cards
+  - `msConfigV3` — generator configuration
+  - `msHistoryV4` — saved deck history
+- **Seed algorithm** — `seedHash` + `makeSeededRng` in `js/utils.js` must not be modified. Same seed + same config + same cards = same deck, always.
+- **JSON format** — version 2 with v1→v2 migration preserved in `js/json.js`. Do not remove `normalizeDeckJSON`.
 
-### No agregar dependencias
-Sin React, Vue, Angular, TypeScript, npm, Vite, Webpack ni ningún framework.
-La app debe poder abrirse directamente desde el filesystem o GitHub Pages.
+### Do not add dependencies
+No React, Vue, Angular, TypeScript, npm, Vite, Webpack, or any framework.
+The app must be openable directly from the filesystem or GitHub Pages.
 
-### No hacer big-bang rewrites
-Cambios incrementales. La app debe funcionar después de cada modificación.
+### No big-bang rewrites
+Incremental changes only. The app must work after every modification.
 
-## Arquitectura de módulos
+## Module architecture
 
-Orden de carga en `index.html` (respetar dependencias):
+Script load order in `index.html` (respect dependencies):
 
 ```
-data/cards.js       ← datos de cartas: initial[], colors[], rarities[]
-js/storage.js       ← Storage.load*/save* — único punto de acceso a localStorage
-js/utils.js         ← funciones puras: shuffle, makeSeededRng, createSeed, colorIcon, safeFileName
-js/state.js         ← todos los globals de runtime declarados aquí
-js/i18n.js          ← tabla tx, T(k), label(c), colorOptionText(c)
-js/generator.js     ← Generator.generate(config, cards, excluded, locks) — sin DOM
-js/collection.js    ← UI de colección
-js/history.js       ← módulo historial
-js/json.js          ← import/export JSON
-js/cardPreview.js   ← preview de imágenes + modal de notas
-js/nav.js           ← navegación estructural + nav flotante
-js/app.js           ← setup, config UI, generador coordinador, swap modal, render
+data/cards.js       ← card data: initial[], colors[], rarities[]
+js/storage.js       ← Storage.load*/save* — single point of access to localStorage
+js/utils.js         ← pure functions: shuffle, makeSeededRng, createSeed, colorIcon, safeFileName
+js/state.js         ← all runtime globals declared here
+js/i18n.js          ← tx table, T(k), label(c), colorOptionText(c)
+js/generator.js     ← Generator.generate(config, cards, excluded, locks) — no DOM
+js/collection.js    ← collection UI
+js/history.js       ← history module
+js/json.js          ← JSON import/export
+js/cardPreview.js   ← image preview + notes modal
+js/nav.js           ← structural nav + floating nav
+js/app.js           ← setup, config UI, generator coordinator, swap modal, render
 ```
 
-## Funciones clave — no duplicar
+## Key functions — do not duplicate
 
-| Función | Archivo | Qué hace |
-|---------|---------|----------|
-| `Generator.generate(config, cards, excluded, locks)` | `generator.js` | Única fuente de verdad para generación |
-| `currentGeneratorConfigSnapshot()` | `app.js` | Lee la config actual del DOM → objeto |
-| `applyConfigToUI(c, opts)` | `app.js` | Escribe config al DOM — única implementación |
-| `Storage.saveCollection(cards)` | `storage.js` | Guarda colección en localStorage |
-| `Storage.loadHistory()` / `Storage.saveHistory(h)` | `storage.js` | Historial |
-| `loadHistoryEntryToCustomDeck(entryIndex, deckIndex)` | `customDeck.js` | Carga un deck del historial al Custom Deck Editor |
-| `deckMscApply(i)` | `app.js` | Importa un código MSC al deck slot `i` del generador |
+| Function | File | What it does |
+|----------|------|--------------|
+| `Generator.generate(config, cards, excluded, locks)` | `generator.js` | Single source of truth for generation |
+| `currentGeneratorConfigSnapshot()` | `app.js` | Reads current config from DOM → object |
+| `applyConfigToUI(c, opts)` | `app.js` | Writes config to DOM — single implementation |
+| `Storage.saveCollection(cards)` | `storage.js` | Saves collection to localStorage |
+| `Storage.loadHistory()` / `Storage.saveHistory(h)` | `storage.js` | History |
+| `loadHistoryEntryToCustomDeck(entryIndex, deckIndex)` | `customDeck.js` | Loads a history deck into the Custom Deck Editor |
+| `deckMscApply(i)` | `app.js` | Imports an MSC code into deck slot `i` in the generator |
 
-## Convenciones
+## Conventions
 
-- Variables globales de runtime viven en `js/state.js`
-- Funciones puras (sin DOM, sin side effects) van en `js/utils.js`
-- Cada módulo accede a globals directamente — no hay sistema de módulos ES (compatibilidad GitHub Pages)
-- Idiomas: español (`es`) e inglés (`en`). Textos via `T(key)` de `i18n.js`
-- `language` es el global que controla el idioma activo
+- Runtime globals live in `js/state.js`
+- Pure functions (no DOM, no side effects) go in `js/utils.js`
+- Each module accesses globals directly — no ES module system (GitHub Pages compatibility)
+- Languages: Spanish (`es`) and English (`en`). Strings via `T(key)` from `i18n.js`
+- `language` is the global that controls the active language
 
-## Estado actual (2026-08-04)
+## Current status (2026-08-04)
 
-Refactorización Fase 1–12 completada.
-`app.js` pasó de 1217 → 391 líneas.
+Refactoring Phases 1–12 complete.
+`app.js` went from 1217 → 391 lines.
 
-### Funcionalidades implementadas (post-fase 12)
-- **Max copies intra-deck:** `maxCopies` permite que una carta aparezca N veces dentro de un mismo mazo. El motor usa un bag model: cada carta se inserta `slotsFor(x)` veces en el pool, se shufflea, y se hace slice. `respectInventory` solo controla disponibilidad cross-deck (1 copia física por deck que la use), no el límite intra-deck.
-- **Load into Custom desde historial:** entradas generadas y custom muestran botón "✦ Cargar en Custom". Si la entrada tiene múltiples decks, hay un botón por deck. `loadHistoryEntryToCustomDeck(entryIndex, deckIndex)`.
-- **MSC import por deck en generador:** cada deck tiene botón "Import code" en su barra MSC. Al importar, reemplaza solo ese slot sin afectar los otros decks ni sus locks. Funciones: `deckMscToggleImport`, `deckMscValidate`, `deckMscApply`.
+### Features implemented (post-phase 12)
+- **Max copies intra-deck:** `maxCopies` allows a card to appear N times within a single deck. The engine uses a bag model: each card is inserted `slotsFor(x)` times into the pool, shuffled, and sliced. `respectInventory` only controls cross-deck availability (1 physical copy consumed per deck that uses the card), not the intra-deck cap.
+- **Load into Custom from history:** both generated and custom history entries show a "✦ Load into Custom" button. Multi-deck entries show one button per deck. `loadHistoryEntryToCustomDeck(entryIndex, deckIndex)`.
+- **MSC import per deck in generator:** each deck has an "Import code" button in its MSC bar. Importing replaces only that slot without affecting other decks or their locks. Functions: `deckMscToggleImport`, `deckMscValidate`, `deckMscApply`.
 
-### Fases pendientes
-- **Fase 6:** Modelo de deck explícito `{id, name, type, seed, cards:[{number, copies}]}`
-- **Prueba mobile:** pendiente para cuando se suba a GitHub Pages
+### Pending
+- **Phase 6:** Explicit deck model `{id, name, type, seed, cards:[{number, copies}]}`
+- **Mobile testing:** pending until deployed to GitHub Pages
 
-## Modos de distribución de colores
+## Color distribution modes
 
-El `<select id=mode>` tiene tres valores:
+The `<select id=mode>` has three values:
 
-| Valor | Comportamiento |
-|-------|---------------|
-| `balanced` | Distribución equitativa entre 5 colores. Respeta prioridad si `priorityMode=fixed` |
-| `free` | Sin restricción de color — las N cartas de cada rareza se eligen del pool completo. Puede producir mazos monocromáticos |
-| `manual` | El usuario define exactamente cuántas de cada color por rareza |
+| Value | Behavior |
+|-------|----------|
+| `balanced` | Equal distribution across 5 colors. Respects priority if `priorityMode=fixed` |
+| `free` | No color restriction — N cards per rarity are picked from the full pool. May produce monochromatic decks |
+| `manual` | User defines exactly how many of each color per rarity |
 
-En modo `free`: `_quota()` devuelve `null`, el motor usa una rama separada en `Generator.generate()`.
+In `free` mode: `_quota()` returns `null`; the engine uses a separate branch in `Generator.generate()`.
 
-## Checklist antes de un cambio
+## Pre-change checklist
 
-1. ¿Cambia el algoritmo de seed? → No hacerlo.
-2. ¿Cambia una localStorage key? → Implementar migración primero.
-3. ¿Duplica lógica de generación? → Usar `Generator.generate` en su lugar.
-4. ¿Duplica la restauración de config al DOM? → Usar `applyConfigToUI`.
-5. ¿La app sigue funcionando después del cambio? → Probar antes de reportar listo.
+1. Does it change the seed algorithm? → Don't do it.
+2. Does it change a localStorage key? → Implement migration first.
+3. Does it duplicate generation logic? → Use `Generator.generate` instead.
+4. Does it duplicate config-to-DOM restoration? → Use `applyConfigToUI`.
+5. Does the app still work after the change? → Test before reporting done.
